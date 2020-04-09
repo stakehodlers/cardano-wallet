@@ -89,10 +89,12 @@ import Cardano.Wallet.Primitive.AddressDiscovery.Random
 import Cardano.Wallet.Primitive.AddressDiscovery.Sequential
     ( SeqState (..), defaultAddressPoolGap, mkSeqStateFromRootXPrv )
 import Cardano.Wallet.Primitive.Model
-    ( Wallet, getState, initWallet, updateState )
+    ( Wallet, applyBlock, getState, initWallet, updateState )
 import Cardano.Wallet.Primitive.Types
     ( ActiveSlotCoefficient (..)
     , Address (..)
+    , Block (..)
+    , BlockHeader (..)
     , ChimericAccount (..)
     , Coin (..)
     , Direction (..)
@@ -189,6 +191,7 @@ import Test.QuickCheck.Monadic
 
 import qualified Cardano.Wallet.Primitive.AddressDerivation.Shelley as Seq
 import qualified Data.ByteArray as BA
+import qualified Data.ByteString as BS
 import qualified Data.List as L
 import qualified Data.Set as Set
 import qualified Data.Text as T
@@ -447,9 +450,57 @@ fileModeSpec =  do
             destroyDBLayer ctx
             testOpeningCleaning
                 f
-                (\db' -> readTxHistory' db' testPk Ascending wholeRange Nothing)
+                (\db' -> readTxHistory' db' testPk Descending wholeRange Nothing)
                 testTxs
                 mempty
+
+
+        it "Rollback scenario" $ \f -> do
+            (_ctx, DBLayer{..}) <- newDBLayer' (Just f)
+
+            let dummyHash = Hash $ BS.pack $ replicate 32 0
+
+            let emptyTx = Tx dummyHash [] []
+            let meta1 = TxMeta InLedger Outgoing (SlotId 0 5) (Quantity 5) (Quantity 5)
+
+            let bh = BlockHeader
+                    { slotId = SlotId 0 10
+                    , blockHeight = Quantity 0
+                    , headerHash = dummyHash
+                    , parentHeaderHash = dummyHash
+                    }
+
+            let fakeBlock = Block bh [] []
+            let (_, cp') = applyBlock fakeBlock testCp
+
+            let history = [ (emptyTx, meta1) ]
+
+            atomically $ do
+                unsafeRunExceptT $ initializeWallet testPk testCp testMetadata mempty
+                unsafeRunExceptT $ putTxHistory testPk history
+                unsafeRunExceptT $ putCheckpoint testPk cp'
+
+            atomically $ do
+                void $ unsafeRunExceptT $ rollbackTo testPk (SlotId 0 8)
+
+            history' <- atomically $ do
+                readTxHistory testPk Ascending wholeRange Nothing
+            Just currentCp <- atomically $ do
+                readCheckpoint testPk
+
+            -- Cps: *                   *
+            -- Txs:           *
+            --      0 1 2 3 4 5 6 7 8 9 10
+            --
+            --                      ^
+            --                      + - rollback to here
+
+            currentCp `shouldBe` testCp
+            history' `shouldBe` []
+
+            -- *** Fails with
+            -- expected: []
+            -- but got: [(Tx {txId = Hash {getHash = "\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL\NUL"}, resolvedInputs = [], outputs = []},TxMeta {status = InLedger, direction = Outgoing, slotId = SlotId {epochNumber = EpochNo {unEpochNo = 0}, slotNumber = SlotNo {unSlotNo = 5}}, blockHeight = Quantity {getQuantity = 5}, amount = Quantity {getQuantity = 5}})]
 
         it "put and read tx history (Decending)" $ \f -> do
             (ctx, DBLayer{..}) <- newDBLayer' (Just f)
