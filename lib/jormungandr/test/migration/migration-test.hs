@@ -215,9 +215,9 @@ waitForBlock tr base = void $ do
     getBlockHeight :: IO (Maybe Integer)
     getBlockHeight = do
         res <- get (url base "network/information")
-        pure (res ^? responseBody . blockHeight)
+        pure (res ^? responseBody . blockNo)
 
-    blockHeight = key "node_tip" . key "height" . key "quantity" . _Integral
+    blockNo = key "node_tip" . key "height" . key "quantity" . _Integral
 
 waitForSomething :: Trace IO Text -> Text -> IO res -> (res -> Bool) -> IO res
 waitForSomething tr name action shouldRetry = do

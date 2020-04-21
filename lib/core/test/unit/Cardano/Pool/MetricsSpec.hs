@@ -296,8 +296,8 @@ test_notSyncedProgress = do
             p `shouldBe` (Quantity $ unsafeMkPercentage $ 1 % 3)
         _ -> fail $ "got something else than expected: " <> show res
   where
-    nodeTip = header0 { blockHeight = Quantity 42 }
-    prodTip = header0 { blockHeight = Quantity 14 }
+    nodeTip = header0 { blockNo = Quantity 42 }
+    prodTip = header0 { blockNo = Quantity 14 }
     nl = mockNetworkLayer
         { currentNodeTip =
             pure nodeTip
@@ -369,7 +369,7 @@ instance Arbitrary Block where
    arbitrary = genericArbitrary
    shrink = genericShrink
 
-instance Arbitrary (Quantity "block" Word32) where
+instance Arbitrary BlockNo where
     arbitrary = Quantity . fromIntegral <$> (arbitrary @Word32)
     shrink (Quantity x) = map Quantity $ shrink x
 
@@ -444,10 +444,10 @@ instance Arbitrary RegistrationsTest where
         genBlockHeader = do
             (parentHeaderHash, _) <- get
             (headerHash, slotId) <- nextState
-            let blockHeight = Quantity $ fromIntegral $ flatSlot ep slotId
+            let blockNo = Quantity $ fromIntegral $ flatSlot ep slotId
             pure BlockHeader
                 { slotId
-                , blockHeight
+                , blockNo
                 , headerHash
                 , parentHeaderHash
                 }

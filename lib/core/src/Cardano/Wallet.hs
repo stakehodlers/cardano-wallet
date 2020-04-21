@@ -240,6 +240,7 @@ import Cardano.Wallet.Primitive.Types
     , AddressState (..)
     , Block (..)
     , BlockHeader (..)
+    , BlockNo (..)
     , BlockchainParameters (..)
     , ChimericAccount (..)
     , Coin (..)
@@ -743,7 +744,7 @@ restoreBlocks ctx wid blocks nodeTip = db & \DBLayer{..} -> do
     let k = bp ^. #getEpochStability
     let localTip = currentTip $ NE.last cps
 
-    let unstable = sparseCheckpoints k (nodeTip ^. #blockHeight)
+    let unstable = sparseCheckpoints k (nodeTip ^. #blockNo)
     mapExceptT atomically $ do
         putTxHistory (PrimaryKey wid) txs
 
@@ -752,8 +753,8 @@ restoreBlocks ctx wid blocks nodeTip = db & \DBLayer{..} -> do
             putDelegationCertificate (PrimaryKey wid) cert slotId
 
         forM_ (NE.init cps) $ \cp' -> do
-            let (Quantity h) = currentTip cp' ^. #blockHeight
-            when (fromIntegral h `elem` unstable) $ do
+            let blockNo = currentTip cp' ^. #blockNo
+            when (blockNo `elem` unstable) $ do
                 liftIO $ logCheckpoint cp'
                 putCheckpoint (PrimaryKey wid) cp'
 
@@ -1301,7 +1302,7 @@ mkTxMeta bp blockHeader wState ins outs =
             { status = Pending
             , direction = Outgoing
             , slotId = blockHeader ^. #slotId
-            , blockHeight = blockHeader ^. #blockHeight
+            , blockNo = blockHeader ^. #blockNo
             , amount = Quantity (amtInps - amtOuts)
             }
         )
@@ -1423,8 +1424,8 @@ listTransactions ctx wid mStart mEnd order = db & \DBLayer{..} -> do
             , txInfoTime = txTime (meta ^. #slotId)
             }
           where
-            txH = getQuantity (meta ^. #blockHeight)
-            tipH = getQuantity (tip ^. #blockHeight)
+            txH = getBlockNo (meta ^. #blockNo)
+            tipH = getBlockNo (tip ^. #blockNo)
         txOuts = Map.fromList
             [ (W.txId tx, W.outputs tx)
             | ((tx, _)) <- txs

@@ -628,7 +628,7 @@ instance Arbitrary S where
             let (node', op') = shiftOp node op
             put node' $> op'
 
-instance Arbitrary (Quantity "block" Word32) where
+instance Arbitrary BlockNo where
     -- k doesn't need to be large for testing this
     arbitrary =
         Quantity . fromIntegral <$> choose (2 :: Int, 20)

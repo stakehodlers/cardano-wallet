@@ -230,7 +230,7 @@ spec = do
                     { status = Pending
                     , direction = Outgoing
                     , slotId = SlotId 14 42
-                    , blockHeight = Quantity 37
+                    , blockNo = Quantity 37
                     , amount = Quantity 1337
                     }
             "-0.001337 pending since 14.42#37" === pretty @_ @Text txMeta
@@ -239,7 +239,7 @@ spec = do
                     { status = InLedger
                     , direction = Incoming
                     , slotId = SlotId 14 0
-                    , blockHeight = Quantity 1
+                    , blockNo = Quantity 1
                     , amount = Quantity 13371442
                     }
             "+13.371442 in ledger since 14.0#1" === pretty @_ @Text txMeta
@@ -295,7 +295,7 @@ spec = do
 
         let mockBlockHeader sl h = BlockHeader
                 { slotId = sl
-                , blockHeight = Quantity h
+                , blockNo = Quantity h
                 , headerHash = Hash "-"
                 , parentHeaderHash = Hash "-"
                 }

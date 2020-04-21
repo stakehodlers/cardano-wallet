@@ -1390,7 +1390,7 @@ instance Arbitrary ApiNetworkClock where
     arbitrary = genericArbitrary
     shrink = genericShrink
 
-instance Arbitrary (Quantity "block" Word32) where
+instance Arbitrary BlockNo where
     shrink (Quantity 0) = []
     shrink _ = [Quantity 0]
     arbitrary = Quantity . fromIntegral <$> (arbitrary @Word32)

@@ -99,6 +99,7 @@ import Cardano.Wallet.Primitive.Fee
     ( FeePolicy (..) )
 import Cardano.Wallet.Primitive.Types
     ( Address (..)
+    , BlockNo (..)
     , ChimericAccount (..)
     , Coin (..)
     , EpochNo (..)
@@ -1057,7 +1058,7 @@ convertBlockHeader h = (W.BlockHeader (slot h) (bh h) (Hash "") (Hash ""))
     , W.parentHeaderHash = parentHeaderHash h
     }
   where
-    bh = Quantity . fromIntegral . chainLength
+    bh = BlockNo . chainLength
 
 
 -- | Take an existing fee policy and override the 'certificate' using the a

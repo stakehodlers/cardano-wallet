@@ -115,6 +115,7 @@ import Cardano.Wallet.Primitive.Types
     ( Address
     , Block
     , BlockHeader (..)
+    , BlockNo (..)
     , BlockchainParameters (..)
     , ChimericAccount
     , SyncTolerance
@@ -146,8 +147,6 @@ import Data.Maybe
     ( fromMaybe )
 import Data.Proxy
     ( Proxy (..) )
-import Data.Quantity
-    ( Quantity (..) )
 import Data.Text
     ( Text )
 import Data.Text.Class
@@ -328,7 +327,7 @@ toSPBlock b = Pool.Block
      convertHeader :: J.BlockHeader -> BlockHeader
      convertHeader h = BlockHeader
          (J.slot h)
-         (Quantity $ fromIntegral $ J.chainLength h)
+         (BlockNo $ J.chainLength h)
          (J.headerHash h)
          (J.parentHeaderHash h)
 

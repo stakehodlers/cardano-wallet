@@ -88,6 +88,7 @@ module Cardano.Wallet.Primitive.Types
     , EpochNo (..)
     , FeePolicy (..)
     , SlotId (..)
+    , BlockNo (..)
     , SlotLength (..)
     , SlotNo (..)
     , StartTime (..)
@@ -669,8 +670,8 @@ instance Buildable (Block) where
 data BlockHeader = BlockHeader
     { slotId
         :: SlotId
-    , blockHeight
-        :: Quantity "block" Word32
+    , blockNo
+        :: BlockNo
     , headerHash
         :: !(Hash "BlockHeader")
     , parentHeaderHash
@@ -680,7 +681,7 @@ data BlockHeader = BlockHeader
 instance NFData BlockHeader
 
 instance Buildable BlockHeader where
-    build (BlockHeader s (Quantity bh) hh _) =
+    build (BlockHeader s (BlockNo bh) hh _) =
         prefixF 8 hhF
         <> "-["
         <> build s
@@ -688,6 +689,16 @@ instance Buildable BlockHeader where
         <> "]"
       where
         hhF = build $ T.decodeUtf8 $ convertToBase Base16 $ getHash hh
+
+
+-- The genesis point does technically not have a BlockNo, but the wallet assigns
+-- it blockNo = 0.
+--
+-- EBBs in the Byron era have the same block height as the /preceding/ block.
+newtype BlockNo = BlockNo { getBlockNo :: Word32 }
+    deriving (Generic, Show, Ord, Eq)
+
+instance NFData BlockNo
 
 {-------------------------------------------------------------------------------
                                       Tx
@@ -773,14 +784,14 @@ data TxMeta = TxMeta
     { status :: !TxStatus
     , direction :: !Direction
     , slotId :: !SlotId
-    , blockHeight :: !(Quantity "block" Word32)
+    , blockNo :: !BlockNo
     , amount :: !(Quantity "lovelace" Natural)
     } deriving (Show, Eq, Ord, Generic)
 
 instance NFData TxMeta
 
 instance Buildable TxMeta where
-    build (TxMeta s d sl (Quantity bh) (Quantity a)) = mempty
+    build (TxMeta s d sl (BlockNo bh) (Quantity a)) = mempty
         <> (case d of; Incoming -> "+"; Outgoing -> "-")
         <> fixedF @Double 6 (fromIntegral a / 1e6)
         <> " " <> build s
@@ -1410,7 +1421,7 @@ syncProgress
     -> SyncProgress
 syncProgress (SyncTolerance timeTolerance) sp tip slotNow =
     let
-        bhTip = fromIntegral . getQuantity $ tip ^. #blockHeight
+        bhTip = fromIntegral . getBlockNo $ tip ^. #blockNo
 
         epochLength = sp ^. #getEpochLength
         (SlotLength slotLength)  = (sp ^. #getSlotLength)

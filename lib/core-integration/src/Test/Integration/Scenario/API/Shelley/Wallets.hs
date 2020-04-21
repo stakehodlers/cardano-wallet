@@ -1665,7 +1665,7 @@ spec = do
                     getFromResponse (#nodeTip . #epochNumber . #getApiT) r
             let slotNum =
                     getFromResponse (#nodeTip . #slotNumber . #getApiT) r
-            let blockHeight =
+            let blockNo =
                     getFromResponse (#nodeTip . #height) r
 
             eventually "Wallet has the same tip as network/information" $ do
@@ -1677,7 +1677,7 @@ spec = do
                             (#tip . #epochNumber . #getApiT) (`shouldBe` epochNum)
                     , expectField
                             (#tip . #slotNumber  . #getApiT) (`shouldBe` slotNum)
-                    , expectField (#tip . #height) (`shouldBe` blockHeight)
+                    , expectField (#tip . #height) (`shouldBe` blockNo)
                     ]
   where
     -- Compute the fee associated with an API transaction.

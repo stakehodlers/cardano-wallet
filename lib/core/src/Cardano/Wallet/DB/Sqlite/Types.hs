@@ -26,6 +26,7 @@ import Cardano.Wallet.Primitive.AddressDiscovery.Sequential
     ( AddressPoolGap (..), getAddressPoolGap, mkAddressPoolGap )
 import Cardano.Wallet.Primitive.Types
     ( Address (..)
+    , BlockNo (..)
     , Coin (..)
     , Direction (..)
     , EpochLength (..)
@@ -324,6 +325,17 @@ instance PersistField Coin where
 
 instance PersistFieldSql Coin where
     sqlType _ = sqlType (Proxy @Word64)
+
+
+----------------------------------------------------------------------------
+-- BlockNo
+
+instance PersistField BlockNo where
+    toPersistValue = toPersistValue . getBlockNo
+    fromPersistValue = fmap BlockNo . fromPersistValue
+
+instance PersistFieldSql BlockNo where
+    sqlType _ = sqlType (Proxy @Word32)
 
 ----------------------------------------------------------------------------
 -- Address

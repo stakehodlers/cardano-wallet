@@ -90,7 +90,7 @@ spec = do
                         getFromResponse (#nodeTip . #epochNumber . #getApiT) sync
                 let slotNum =
                         getFromResponse (#nodeTip . #slotNumber . #getApiT) sync
-                let blockHeight =
+                let blockNo =
                         getFromResponse (#nodeTip . #height) sync
 
                 res <- request @ApiByronWallet ctx
@@ -99,7 +99,7 @@ spec = do
                     [ expectField (#state . #getApiT) (`shouldBe` Ready)
                     , expectField (#tip . #epochNumber . #getApiT) (`shouldBe` epochNum)
                     , expectField (#tip . #slotNumber  . #getApiT) (`shouldBe` slotNum)
-                    , expectField (#tip . #height) (`shouldBe` blockHeight)
+                    , expectField (#tip . #height) (`shouldBe` blockNo)
                     ]
 
     describe "NETWORK_PARAMS_01 - Valid epoch values" $ do

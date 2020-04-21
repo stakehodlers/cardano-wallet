@@ -71,6 +71,7 @@ import Cardano.Wallet.Network
     )
 import Cardano.Wallet.Primitive.Types
     ( BlockHeader (..)
+    , BlockNo (..)
     , EpochNo (..)
     , PoolId
     , PoolOwner (..)
@@ -395,8 +396,8 @@ newStakePoolLayer tr block0H getEpCst db@DBLayer{..} nl metadataDir = StakePoolL
         then Quantity minBound
         else Quantity . unsafeMkPercentage $ (toW s0) % (toW s1)
       where
-        s0 = getQuantity $ prodTip ^. #blockHeight
-        s1 = getQuantity $ nodeTip ^. #blockHeight
+        s0 = getBlockNo $ prodTip ^. #blockNo
+        s1 = getBlockNo $ nodeTip ^. #blockNo
         toW :: Integral i => i -> Integer
         toW = fromIntegral
 

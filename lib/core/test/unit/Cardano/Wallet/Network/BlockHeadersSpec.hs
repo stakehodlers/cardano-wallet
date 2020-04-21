@@ -422,7 +422,7 @@ instance Arbitrary TestCase where
       where
         startFrom (SlotId (EpochNo ep) (SlotNo n)) xs =
             [ BlockHeader (SlotId (EpochNo ep) (sl+fromIntegral n)) bh' hh prev
-            | BlockHeader (SlotId _ sl) (Quantity bh) hh prev <- xs
+            | BlockHeader (SlotId _ sl) (BlockNo bh) hh prev <- xs
             , let bh' = Quantity (bh+fromIntegral n+1)
             ]
 
@@ -431,7 +431,7 @@ instance Arbitrary TestCase where
         | (k', n, l) <- shrink (k, length nodeChain, length localChain)
         ]
 
-instance Arbitrary (Quantity "block" Word32) where
+instance Arbitrary BlockNo where
     -- k doesn't need to be large for testing this
     arbitrary =
         Quantity . fromIntegral <$> choose (2 :: Int, 30)

@@ -38,6 +38,7 @@ import Cardano.Wallet.Primitive.Types
     ( Address (..)
     , Block (..)
     , BlockHeader (..)
+    , BlockNo (..)
     , BlockchainParameters (..)
     , Coin (..)
     , Hash (..)
@@ -223,8 +224,8 @@ fromGenesisTxOut bp outs = Block
     , header = BlockHeader
         { slotId =
             SlotId 0 0
-        , blockHeight =
-            Quantity 0
+        , blockNo =
+            BlockNo 0
         , headerHash =
             coerce $ getGenesisBlockHash bp
         , parentHeaderHash =

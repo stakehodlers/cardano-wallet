@@ -61,6 +61,7 @@ import Cardano.Wallet.Primitive.AddressDerivation
 import Cardano.Wallet.Primitive.Types
     ( Address (..)
     , BlockHeader (..)
+    , BlockNo (..)
     , Coin (..)
     , EpochNo (..)
     , Hash (..)
@@ -89,8 +90,6 @@ import Data.Either.Extra
     ( eitherToMaybe )
 import Data.List
     ( find )
-import Data.Quantity
-    ( Quantity (..) )
 import Data.Word
     ( Word32, Word64, Word8 )
 import Debug.Trace
@@ -335,7 +334,7 @@ decodeGenesisBlockHeader = do
     -- extra complexity at the type-level. That's a bit dodgy though.
     return $ BlockHeader
         { slotId = SlotId epoch 0
-        , blockHeight = Quantity $ fromIntegral difficulty
+        , blockNo = BlockNo $ fromIntegral difficulty
         , headerHash = Hash "http-bridge"
         , parentHeaderHash = previous
         }
@@ -383,10 +382,9 @@ decodeMainBlockHeader = do
     _ <- decodeMainProof
     (slot, difficulty) <- decodeMainConsensusData
     _ <- decodeMainExtraData
-    let bh = Quantity $ fromIntegral difficulty
     return $ BlockHeader
         { slotId = slot
-        , blockHeight = bh
+        , blockNo = BlockNo $ fromIntegral difficulty
         , headerHash = Hash "http-bridge"
         , parentHeaderHash = previous
         }

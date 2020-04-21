@@ -688,7 +688,7 @@ mkWalletMetadataUpdate meta =
 blockHeaderFromEntity :: Checkpoint -> W.BlockHeader
 blockHeaderFromEntity cp = W.BlockHeader
     { slotId = checkpointSlot cp
-    , blockHeight = Quantity (checkpointBlockHeight cp)
+    , blockNo = checkpointBlockHeight cp
     , headerHash = getBlockId (checkpointHeaderHash cp)
     , parentHeaderHash = getBlockId (checkpointParentHash cp)
     }
@@ -732,14 +732,14 @@ mkCheckpointEntity wid wal =
   where
     header = W.currentTip wal
     sl = header ^. #slotId
-    (Quantity bh) = header ^. #blockHeight
+    (W.BlockNo bh) = header ^. #blockNo
     bp = W.blockchainParameters wal
     cp = Checkpoint
         { checkpointWalletId = wid
         , checkpointSlot = sl
         , checkpointParentHash = BlockId (header ^. #parentHeaderHash)
         , checkpointHeaderHash = BlockId (header ^. #headerHash)
-        , checkpointBlockHeight = bh
+        , checkpointBlockHeight = W.BlockNo bh
         , checkpointGenesisHash = BlockId (coerce (bp ^. #getGenesisBlockHash))
         , checkpointGenesisStart = coerce (bp ^. #getGenesisBlockDate)
         , checkpointFeePolicy = bp ^. #getFeePolicy
@@ -775,7 +775,7 @@ checkpointFromEntity cp utxo s =
         slot
         (BlockId headerHash)
         (BlockId parentHeaderHash)
-        bh
+        blockNo
         (BlockId genesisHash)
         genesisStart
         feePolicy
@@ -785,7 +785,7 @@ checkpointFromEntity cp utxo s =
         epochStability
         activeSlotCoeff
         ) = cp
-    header = (W.BlockHeader slot (Quantity bh) headerHash parentHeaderHash)
+    header = (W.BlockHeader slot blockNo headerHash parentHeaderHash)
     utxo' = W.UTxO . Map.fromList $
         [ (W.TxIn input ix, W.TxOut addr coin)
         | UTxO _ _ (TxId input) ix addr coin <- utxo
@@ -854,7 +854,7 @@ mkTxMetaEntity wid txid meta = TxMeta
     , txMetaStatus = meta ^. #status
     , txMetaDirection = meta ^. #direction
     , txMetaSlot = meta ^. #slotId
-    , txMetaBlockHeight = getQuantity (meta ^. #blockHeight)
+    , txMetaBlockHeight = W.getBlockNo (meta ^. #blockNo)
     , txMetaAmount = getQuantity (meta ^. #amount)
     }
 
@@ -887,7 +887,7 @@ txHistoryFromEntity metas ins outs = map mkItem metas
         { W.status = txMetaStatus m
         , W.direction = txMetaDirection m
         , W.slotId = txMetaSlot m
-        , W.blockHeight = Quantity (txMetaBlockHeight m)
+        , W.blockNo = W.BlockNo (txMetaBlockHeight m)
         , W.amount = Quantity (txMetaAmount m)
         }
 
@@ -926,7 +926,7 @@ pruneCheckpoints
     -> Checkpoint
     -> SqlPersistT IO ()
 pruneCheckpoints wid cp = do
-    let height = Quantity $ fromIntegral $ checkpointBlockHeight cp
+    let height = checkpointBlockHeight cp
     let epochStability = Quantity $ checkpointEpochStability cp
     let cps = sparseCheckpoints epochStability height
     deleteCheckpoints wid [ CheckpointBlockHeight /<-. cps ]

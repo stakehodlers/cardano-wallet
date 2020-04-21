@@ -88,7 +88,7 @@ import Data.Text
 import Data.Time.Clock.POSIX
     ( posixSecondsToUTCTime )
 import Data.Word
-    ( Word16, Word32 )
+    ( Word16 )
 import GHC.Stack
     ( HasCallStack )
 import Numeric.Natural
@@ -171,8 +171,8 @@ emptyGenesis bp = W.Block
     , header = W.BlockHeader
         { slotId =
             W.SlotId 0 0
-        , blockHeight =
-            Quantity 0
+        , blockNo =
+            W.BlockNo 0
         , headerHash =
             coerce $ W.getGenesisBlockHash bp
         , parentHeaderHash =
@@ -280,7 +280,7 @@ fromByronBlock genesisHash epLength byronBlk = case byronBlockRaw byronBlk of
         { header = W.BlockHeader
             { slotId =
                 fromSlotNo epLength $ blockSlot byronBlk
-            , blockHeight =
+            , blockNo =
                 fromBlockNo $ blockNo byronBlk
             , headerHash =
                 fromByronHash $ blockHash byronBlk
@@ -330,21 +330,21 @@ fromSlotNo epLength (SlotNo sl) =
     W.fromFlatSlot epLength sl
 
 -- FIXME unsafe conversion (Word64 -> Word32)
-fromBlockNo :: BlockNo -> Quantity "block" Word32
+fromBlockNo :: BlockNo -> W.BlockNo
 fromBlockNo (BlockNo h) =
-    Quantity (fromIntegral h)
+    W.BlockNo (fromIntegral h)
 
 fromTip :: W.Hash "Genesis" -> W.EpochLength -> Tip ByronBlock -> W.BlockHeader
 fromTip genesisHash epLength tip = case getPoint (getTipPoint tip) of
     Origin -> W.BlockHeader
         { slotId = W.SlotId 0 0
-        , blockHeight = Quantity 0
+        , blockNo = W.BlockNo 0
         , headerHash = coerce genesisHash
         , parentHeaderHash = hashOfNoParent
         }
     At blk -> W.BlockHeader
         { slotId = fromSlotNo epLength $ Point.blockPointSlot blk
-        , blockHeight = fromBlockNo $ getLegacyTipBlockNo tip
+        , blockNo = fromBlockNo $ getLegacyTipBlockNo tip
         , headerHash = fromByronHash $ Point.blockPointHash blk
         -- TODO
         -- We only use the parentHeaderHash in the

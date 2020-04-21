@@ -150,7 +150,7 @@ spec = do
             resp <- runExceptT $ currentNodeTip nw
             resp `shouldSatisfy` isRight
             let (Right slot) = slotId <$> resp
-            let (Right height) = blockHeight <$> resp
+            let (Right height) = blockNo <$> resp
             slot `shouldSatisfy` (>= slotMinBound)
             height `shouldSatisfy` (>= Quantity 0)
 
@@ -181,7 +181,7 @@ spec = do
                 bytes <- BS.pack <$> generate (vector 32)
                 let block = BlockHeader
                         { slotId = SlotId 42 14 -- Anything
-                        , blockHeight = Quantity 0 -- Anything
+                        , blockNo = Quantity 0 -- Anything
                         , headerHash = Hash bytes
                         , parentHeaderHash = Hash bytes
                         }

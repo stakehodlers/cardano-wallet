@@ -42,6 +42,7 @@ import Cardano.Wallet.DB.Sqlite.Types
     ( BlockId (..) )
 import Cardano.Wallet.Primitive.Types
     ( BlockHeader (..)
+    , BlockNo (..)
     , EpochNo (..)
     , PoolId
     , PoolRegistrationCertificate (..)
@@ -292,7 +293,7 @@ mkPoolProduction pool block = PoolProduction
     , poolProductionSlot = slotId block
     , poolProductionHeaderHash = BlockId (headerHash block)
     , poolProductionParentHash = BlockId (parentHeaderHash block)
-    , poolProductionBlockHeight = getQuantity (blockHeight block)
+    , poolProductionBlockHeight = getBlockNo (blockNo block)
     }
 
 fromPoolProduction
@@ -302,7 +303,7 @@ fromPoolProduction (PoolProduction pool slot headerH parentH height) =
     ( pool
     , BlockHeader
         { slotId = slot
-        , blockHeight = Quantity height
+        , blockNo = BlockNo height
         , headerHash = getBlockId headerH
         , parentHeaderHash = getBlockId parentH
         }

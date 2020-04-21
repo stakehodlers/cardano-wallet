@@ -200,6 +200,7 @@ import Cardano.Wallet.Primitive.Types
     ( Address
     , AddressState (..)
     , Block
+    , BlockNo (..)
     , BlockchainParameters
     , Coin (..)
     , Hash (..)
@@ -284,7 +285,7 @@ import Data.Time
 import Data.Time.Clock
     ( getCurrentTime )
 import Data.Word
-    ( Word32, Word64 )
+    ( Word64 )
 import Fmt
     ( Buildable, pretty )
 import GHC.Stack
@@ -1659,7 +1660,7 @@ getNetworkInformation (_block0, bp, st) nl = do
             ApiBlockReference
                 { epochNumber = ApiT $ nodeTip ^. (#slotId . #epochNumber)
                 , slotNumber  = ApiT $ nodeTip ^. (#slotId . #slotNumber)
-                , height = natural (nodeTip ^. #blockHeight)
+                , height = natural (nodeTip ^. #blockNo)
                 }
         , networkTip =
             ApiNetworkTip
@@ -1838,7 +1839,7 @@ mkApiTransaction txid ins outs (meta, timestamp) setTimeReference =
         , block = ApiBlockReference
             { slotNumber = ApiT $ meta ^. (#slotId . #slotNumber )
             , epochNumber = ApiT $ meta ^. (#slotId . #epochNumber)
-            , height = natural (meta ^. #blockHeight)
+            , height = natural (meta ^. #blockNo)
             }
         }
 
@@ -1850,14 +1851,14 @@ coerceCoin :: forall (n :: NetworkDiscriminant). AddressAmount (ApiT Address, Pr
 coerceCoin (AddressAmount (ApiT addr, _) (Quantity c)) =
     TxOut addr (Coin $ fromIntegral c)
 
-natural :: Quantity q Word32 -> Quantity q Natural
-natural = Quantity . fromIntegral . getQuantity
+natural :: BlockNo -> Quantity q Natural
+natural = Quantity . fromIntegral . getBlockNo
 
 getWalletTip :: Wallet s -> ApiBlockReference
 getWalletTip wallet = ApiBlockReference
     { epochNumber = ApiT $ (currentTip wallet) ^. #slotId . #epochNumber
     , slotNumber = ApiT $ (currentTip wallet) ^. #slotId . #slotNumber
-    , height = natural $ (currentTip wallet) ^. #blockHeight
+    , height = natural $ (currentTip wallet) ^. #blockNo
     }
 
 {-------------------------------------------------------------------------------

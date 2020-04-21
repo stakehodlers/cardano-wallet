@@ -369,7 +369,7 @@ bench_restoration _proxy tracer socketPath bp vData progressLogFile (wid, wname,
             sayErr . fmt $ networkText ||+ " tip is at " +|| sl ||+ ""
 
             withFile progressLogFile WriteMode $ \h -> do
-                -- Use a custom tracer to output (time, blockHeight) to a file
+                -- Use a custom tracer to output (time, blockNo) to a file
                 -- each time we apply blocks.
                 let fileTr = Tracer $ \msg -> do
                         liftIO . B8.hPut h . T.encodeUtf8 . (<> "\n") $ msg
@@ -392,7 +392,7 @@ bench_restoration _proxy tracer socketPath bp vData progressLogFile (wid, wname,
 traceProgressForPlotting :: Tracer IO Text -> Tracer IO WalletLog
 traceProgressForPlotting tr = Tracer $ \case
     MsgFollow (MsgApplyBlocks bs) -> do
-        let tip = pretty . getQuantity . blockHeight . NE.last $ bs
+        let tip = pretty . getQuantity . blockNo . NE.last $ bs
         time <- pretty . utcTimeToPOSIXSeconds <$> getCurrentTime
         traceWith tr (time <> " " <> tip)
     _ -> return ()

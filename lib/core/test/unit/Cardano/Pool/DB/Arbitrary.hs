@@ -139,7 +139,7 @@ instance Arbitrary StakePoolsFixture where
         mkBlockHeader :: SlotId -> BlockHeader
         mkBlockHeader s = BlockHeader
             { slotId = s
-            , blockHeight = Quantity 0
+            , blockNo = Quantity 0
             , headerHash = Hash "00000000000000000000000000000001"
             , parentHeaderHash = Hash "00000000000000000000000000000000"
             }

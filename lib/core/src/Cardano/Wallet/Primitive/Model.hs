@@ -380,7 +380,7 @@ prefilterBlock b u0 = runState $ do
         { status = InLedger
         , direction = dir
         , slotId = b ^. #header . #slotId
-        , blockHeight = b ^. #header . #blockHeight
+        , blockNo = b ^. #header . #blockNo
         , amount = Quantity amt
         }
     applyTx

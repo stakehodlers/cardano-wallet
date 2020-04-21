@@ -401,7 +401,7 @@ mkTxHistory numTx numInputs numOutputs range =
             { status = [InLedger, Pending] !! (i `mod` 2)
             , direction = Incoming
             , slotId = sl i
-            , blockHeight = Quantity $ fromIntegral $ unSlotNo $ slotNumber $ sl i
+            , blockNo = Quantity $ fromIntegral $ unSlotNo $ slotNumber $ sl i
             , amount = Quantity (fromIntegral numOutputs)
             }
         )

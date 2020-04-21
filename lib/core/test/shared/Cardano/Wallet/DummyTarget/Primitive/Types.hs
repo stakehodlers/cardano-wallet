@@ -59,7 +59,7 @@ block0 :: Block
 block0 = Block
     { header = BlockHeader
         { slotId = slotMinBound
-        , blockHeight = Quantity 0
+        , blockNo = Quantity 0
         , headerHash = mockHash slotMinBound
         , parentHeaderHash = coerce genesisHash
         }
