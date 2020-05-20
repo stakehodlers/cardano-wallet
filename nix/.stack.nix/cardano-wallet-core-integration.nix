@@ -64,6 +64,9 @@ in { system, compiler, flags, pkgs, hsPkgs, pkgconfPkgs, ... }:
           (hsPkgs."aeson-qq" or (buildDepError "aeson-qq"))
           (hsPkgs."async" or (buildDepError "async"))
           (hsPkgs."base" or (buildDepError "base"))
+          (hsPkgs."base58-bytestring" or (buildDepError "base58-bytestring"))
+          (hsPkgs."bech32" or (buildDepError "bech32"))
+          (hsPkgs."bech32-th" or (buildDepError "bech32-th"))
           (hsPkgs."bytestring" or (buildDepError "bytestring"))
           (hsPkgs."cardano-addresses" or (buildDepError "cardano-addresses"))
           (hsPkgs."cardano-wallet-cli" or (buildDepError "cardano-wallet-cli"))
@@ -86,6 +89,7 @@ in { system, compiler, flags, pkgs, hsPkgs, pkgconfPkgs, ... }:
           (hsPkgs."OddWord" or (buildDepError "OddWord"))
           (hsPkgs."memory" or (buildDepError "memory"))
           (hsPkgs."process" or (buildDepError "process"))
+          (hsPkgs."QuickCheck" or (buildDepError "QuickCheck"))
           (hsPkgs."retry" or (buildDepError "retry"))
           (hsPkgs."scrypt" or (buildDepError "scrypt"))
           (hsPkgs."time" or (buildDepError "time"))
@@ -93,7 +97,7 @@ in { system, compiler, flags, pkgs, hsPkgs, pkgconfPkgs, ... }:
           (hsPkgs."text" or (buildDepError "text"))
           (hsPkgs."text-class" or (buildDepError "text-class"))
           (hsPkgs."time" or (buildDepError "time"))
-          (hsPkgs."QuickCheck" or (buildDepError "QuickCheck"))
+          (hsPkgs."yaml" or (buildDepError "yaml"))
           ];
         buildable = true;
         };
