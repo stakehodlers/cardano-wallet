@@ -7,6 +7,7 @@
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE NumericUnderscores #-}
+{-# LANGUAGE OverloadedLabels #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -175,6 +176,8 @@ import Data.FileEmbed
     ( embedFile, makeRelativeToProject )
 import Data.Function
     ( (&) )
+import Data.Generics.Internal.VL.Lens
+    ( view )
 import Data.List
     ( foldl' )
 import Data.List.NonEmpty
@@ -687,254 +690,217 @@ spec = do
               `shouldSatisfy` isRight
 
     describe "pointless tests to trigger coverage for record accessors" $ do
-        it "ApiAddress" $ property $ \x ->
-            let
-                x' = ApiAddress
-                    { id = id (x :: ApiAddress ('Testnet 0))
-                    , state = state (x :: ApiAddress ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiEpochInfo" $ property $ \x ->
-            let
-                x' = ApiEpochInfo
-                    { epochNumber = epochNumber (x :: ApiEpochInfo)
-                    , epochStartTime = epochStartTime (x :: ApiEpochInfo)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiSelectCoinsData" $ property $ \x ->
-            let
-                x' = ApiSelectCoinsData
-                    { payments = payments (x :: ApiSelectCoinsData ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiCoinSelection" $ property $ \x ->
-            let
-                x' = ApiCoinSelection
-                    { inputs = inputs (x :: ApiCoinSelection ('Testnet 0))
-                    , outputs = outputs (x :: ApiCoinSelection ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiCoinSelectionInput" $ property $ \x ->
-            let
-                x' = ApiCoinSelectionInput
-                    { id = id (x :: ApiCoinSelectionInput ('Testnet 0))
-                    , index = index (x :: ApiCoinSelectionInput ('Testnet 0))
-                    , address = address (x :: ApiCoinSelectionInput ('Testnet 0))
-                    , amount = amount (x :: ApiCoinSelectionInput ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiWallet" $ property $ \x ->
-            let
-                x' = ApiWallet
-                    { id = id (x :: ApiWallet)
-                    , addressPoolGap = addressPoolGap (x :: ApiWallet)
-                    , balance = balance (x :: ApiWallet)
-                    , delegation = delegation (x :: ApiWallet)
-                    , name = name (x :: ApiWallet)
-                    , passphrase = passphrase (x :: ApiWallet)
-                    , state = state (x :: ApiWallet)
-                    , tip = tip (x :: ApiWallet)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiByronWallet" $ property $ \x ->
-            let
-                x' = ApiByronWallet
-                    { id = id (x :: ApiByronWallet)
-                    , balance = balance (x :: ApiByronWallet)
-                    , name = name (x :: ApiByronWallet)
-                    , passphrase = passphrase (x :: ApiByronWallet)
-                    , state = state (x :: ApiByronWallet)
-                    , tip = tip (x :: ApiByronWallet)
-                    , discovery = discovery (x :: ApiByronWallet)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiWalletMigrationInfo" $ property $ \x ->
-            let
-                x' = ApiWalletMigrationInfo
-                    { migrationCost =
-                        migrationCost (x :: ApiWalletMigrationInfo)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiWalletMigrationPostData" $ property $ \x ->
-            let
-                x' = ApiWalletMigrationPostData
-                    { passphrase =
-                        passphrase (x :: ApiWalletMigrationPostData ('Testnet 0))
-                    , addresses =
-                        addresses (x :: ApiWalletMigrationPostData ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiWalletPassphrase" $ property $ \x ->
-            let
-                x' = ApiWalletPassphrase
-                    { passphrase =
-                        passphrase (x :: ApiWalletPassphrase)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiFee" $ property $ \x ->
-            let
-                x' = ApiFee
-                    { estimatedMin = estimatedMin (x :: ApiFee)
-                    , estimatedMax = estimatedMax (x :: ApiFee)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiTxId" $ property $ \x ->
-            let
-                x' = ApiTxId
-                    { id = id (x :: ApiTxId)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "WalletPostData" $ property $ \x ->
-            let
-                x' = WalletPostData
-                    { addressPoolGap = addressPoolGap (x :: WalletPostData)
-                    , mnemonicSentence = mnemonicSentence (x :: WalletPostData)
-                    , mnemonicSecondFactor = mnemonicSecondFactor (x :: WalletPostData)
-                    , name = name (x :: WalletPostData)
-                    , passphrase = passphrase (x :: WalletPostData)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "WalletPutData" $ property $ \x ->
-            let
-                x' = WalletPutData
-                    { name = name (x :: WalletPutData)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "WalletPutPassphraseData" $ property $ \x ->
-            let
-                x' = WalletPutPassphraseData
-                    { oldPassphrase = oldPassphrase (x :: WalletPutPassphraseData)
-                    , newPassphrase = newPassphrase (x :: WalletPutPassphraseData)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ByronWalletPutPassphraseData" $ property $ \x ->
-            let
-                x' = ByronWalletPutPassphraseData
-                    { oldPassphrase = oldPassphrase (x :: ByronWalletPutPassphraseData)
-                    , newPassphrase = newPassphrase (x :: ByronWalletPutPassphraseData)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "PostTransactionData" $ property $ \x ->
-            let
-                x' = PostTransactionData
-                    { payments = payments (x :: PostTransactionData ('Testnet 0))
-                    , passphrase = passphrase (x :: PostTransactionData ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "PostTransactionFeeData" $ property $ \x ->
-            let
-                x' = PostTransactionFeeData
-                    { payments = payments (x :: PostTransactionFeeData ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "PostExternalTransactionData" $ property $ \x ->
-            let
-                x' = PostExternalTransactionData
-                    { payload = payload (x :: PostExternalTransactionData)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiTransaction" $ property $ \x ->
-            let
-                x' = ApiTransaction
-                    { id = id (x :: ApiTransaction ('Testnet 0))
-                    , amount = amount (x :: ApiTransaction ('Testnet 0))
-                    , insertedAt = insertedAt (x :: ApiTransaction ('Testnet 0))
-                    , pendingSince = pendingSince (x :: ApiTransaction ('Testnet 0))
-                    , depth = depth (x :: ApiTransaction ('Testnet 0))
-                    , direction = direction (x :: ApiTransaction ('Testnet 0))
-                    , inputs = inputs (x :: ApiTransaction ('Testnet 0))
-                    , outputs = outputs (x :: ApiTransaction ('Testnet 0))
-                    , status = status (x :: ApiTransaction ('Testnet 0))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "AddressAmount" $ property $ \x ->
-            let
-                x' = AddressAmount
-                    { address = address (x :: AddressAmount (ApiT Address, Proxy ('Testnet 0)))
-                    , amount = amount (x :: AddressAmount (ApiT Address, Proxy ('Testnet 0)))
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiTimeReference" $ property $ \x ->
-            let
-                x' = ApiTimeReference
-                    { time = time (x :: ApiTimeReference)
-                    , block = block (x :: ApiTimeReference)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiBlockReference" $ property $ \x ->
-            let
-                x' = ApiBlockReference
-                    { slotNumber = slotNumber (x :: ApiBlockReference)
-                    , epochNumber = epochNumber (x :: ApiBlockReference)
-                    , height = height (x :: ApiBlockReference)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiNetworkTip" $ property $ \x ->
-            let
-                x' = ApiNetworkTip
-                    { slotNumber = slotNumber (x :: ApiNetworkTip)
-                    , epochNumber = epochNumber (x :: ApiNetworkTip)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiNetworkInformation" $ property $ \x ->
-            let
-                x' = ApiNetworkInformation
-                    { syncProgress = syncProgress (x :: ApiNetworkInformation)
-                    , nextEpoch = nextEpoch (x :: ApiNetworkInformation)
-                    , nodeTip = nodeTip (x :: ApiNetworkInformation)
-                    , networkTip = networkTip (x :: ApiNetworkInformation)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiNetworkClock" $ property $ \x ->
-            let
-                x' = ApiNetworkClock
-                    { ntpStatus = ntpStatus (x :: ApiNetworkClock)
-                    }
-            in
-                x' === x .&&. show x' === show x
-        it "ApiNetworkParameters" $ property $ \x ->
-            let
-                x' = ApiNetworkParameters
-                    { genesisBlockHash =
-                            genesisBlockHash (x :: ApiNetworkParameters)
-                    , blockchainStartTime =
-                            blockchainStartTime (x :: ApiNetworkParameters)
-                    , slotLength =
-                            slotLength (x :: ApiNetworkParameters)
-                    , epochLength =
-                            epochLength (x :: ApiNetworkParameters)
-                    , epochStability =
-                            epochStability (x :: ApiNetworkParameters)
-                    , activeSlotCoefficient =
-                            activeSlotCoefficient (x :: ApiNetworkParameters)
-                    }
-            in
-                x' === x .&&. show x' === show x
+        it "ApiAddress" $ property $
+            \(x :: ApiAddress ('Testnet 0)) ->
+                let y = ApiAddress
+                        { id = view #id x
+                        , state = view #state x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiEpochInfo" $ property $
+            \(x :: ApiEpochInfo) ->
+                let y = ApiEpochInfo
+                        { epochNumber = view #epochNumber x
+                        , epochStartTime = view #epochStartTime x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiSelectCoinsData" $ property $
+            \(x :: ApiSelectCoinsData ('Testnet 0)) ->
+                let y = ApiSelectCoinsData
+                        { payments = view #payments x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiCoinSelection" $ property $
+            \(x :: ApiCoinSelection ('Testnet 0)) ->
+                let y = ApiCoinSelection
+                        { inputs = view #inputs x
+                        , outputs = view #outputs x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiCoinSelectionInput" $ property $
+            \(x :: ApiCoinSelectionInput ('Testnet 0)) ->
+                let y = ApiCoinSelectionInput
+                        { id = view #id x
+                        , index = view #index x
+                        , address = view #address x
+                        , amount = view #amount x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiWallet" $ property $
+            \(x :: ApiWallet) ->
+                let y = ApiWallet
+                        { id = view #id x
+                        , addressPoolGap = view #addressPoolGap x
+                        , balance = view #balance x
+                        , delegation = view #delegation x
+                        , name = view #name x
+                        , passphrase = view #passphrase x
+                        , state = view #state x
+                        , tip = view #tip x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiByronWallet" $ property $
+            \(x :: ApiByronWallet) ->
+                let y = ApiByronWallet
+                        { id = view #id x
+                        , balance = view #balance x
+                        , name = view #name x
+                        , passphrase = view #passphrase x
+                        , state = view #state x
+                        , tip = view #tip x
+                        , discovery = view #discovery x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiWalletMigrationInfo" $ property $
+            \(x :: ApiWalletMigrationInfo) ->
+                let y = ApiWalletMigrationInfo
+                        { migrationCost = view #migrationCost x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiWalletMigrationPostData" $ property $
+            \(x :: ApiWalletMigrationPostData ('Testnet 0)) ->
+                let y = ApiWalletMigrationPostData
+                        { passphrase = view #passphrase x
+                        , addresses = view #addresses x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiWalletPassphrase" $ property $
+            \(x :: ApiWalletPassphrase) ->
+                let y = ApiWalletPassphrase
+                        { passphrase = view #passphrase x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiFee" $ property $
+            \(x :: ApiFee) ->
+                let y = ApiFee
+                        { estimatedMin = view #estimatedMin x
+                        , estimatedMax = view #estimatedMax x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiTxId" $ property $
+            \(x :: ApiTxId) ->
+                let y = ApiTxId
+                        { id = view #id x
+                        } in
+                x === y .&&. show x === show y
+        it "WalletPostData" $ property $
+            \(x :: WalletPostData) ->
+                let y = WalletPostData
+                        { addressPoolGap = view #addressPoolGap x
+                        , mnemonicSentence = view #mnemonicSentence x
+                        , mnemonicSecondFactor = view #mnemonicSecondFactor x
+                        , name = view #name x
+                        , passphrase = view #passphrase x
+                        } in
+                x === y .&&. show x === show y
+        it "WalletPutData" $ property $
+            \(x :: WalletPutData) ->
+                let y = WalletPutData
+                        { name = view #name x
+                        } in
+                x === y .&&. show x === show y
+        it "WalletPutPassphraseData" $ property $
+            \(x :: WalletPutPassphraseData) ->
+                let y = WalletPutPassphraseData
+                        { oldPassphrase = view #oldPassphrase x
+                        , newPassphrase = view #newPassphrase x
+                        } in
+                x === y .&&. show x === show y
+        it "ByronWalletPutPassphraseData" $ property $
+            \(x :: ByronWalletPutPassphraseData) ->
+                let y = ByronWalletPutPassphraseData
+                        { oldPassphrase = view #oldPassphrase x
+                        , newPassphrase = view #newPassphrase x
+                        } in
+                x === y .&&. show x === show y
+        it "PostTransactionData" $ property $
+            \(x :: PostTransactionData ('Testnet 0)) ->
+                let y = PostTransactionData
+                        { payments = view #payments x
+                        , passphrase = view #passphrase x
+                        } in
+                x === y .&&. show x === show y
+        it "PostTransactionFeeData" $ property $
+            \(x :: PostTransactionFeeData ('Testnet 0)) ->
+                let y = PostTransactionFeeData
+                        { payments = view #payments x
+                        } in
+                x === y .&&. show x === show y
+        it "PostExternalTransactionData" $ property $
+            \(x :: PostExternalTransactionData) ->
+                let y = PostExternalTransactionData
+                        { payload = view #payload x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiTransaction" $ property $
+            \(x :: ApiTransaction ('Testnet 0)) ->
+                let y = ApiTransaction
+                        { id = view #id x
+                        , amount = view #amount x
+                        , insertedAt = view #insertedAt x
+                        , pendingSince = view #pendingSince x
+                        , depth = view #depth x
+                        , direction = view #direction x
+                        , inputs = view #inputs x
+                        , outputs = view #outputs x
+                        , status = view #status x
+                        } in
+                x === y .&&. show x === show y
+        it "AddressAmount" $ property $
+            \(x :: AddressAmount (ApiT Address, Proxy ('Testnet 0))) ->
+                let y = AddressAmount
+                        { address = view #address x
+                        , amount = view #amount x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiTimeReference" $ property $
+            \(x :: ApiTimeReference) ->
+                let y = ApiTimeReference
+                        { time = view #time x
+                        , block = view #block x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiBlockReference" $ property $
+            \(x :: ApiBlockReference) ->
+                let y = ApiBlockReference
+                        { slotNumber = view #slotNumber x
+                        , epochNumber = view #epochNumber x
+                        , height = view #height x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiNetworkTip" $ property $
+            \(x :: ApiNetworkTip) ->
+                let y = ApiNetworkTip
+                        { slotNumber = view #slotNumber x
+                        , epochNumber = view #epochNumber x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiNetworkInformation" $ property $
+            \(x :: ApiNetworkInformation) ->
+                let y = ApiNetworkInformation
+                        { syncProgress = view #syncProgress x
+                        , nextEpoch = view #nextEpoch x
+                        , nodeTip = view #nodeTip x
+                        , networkTip = view #networkTip x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiNetworkClock" $ property $
+            \(x :: ApiNetworkClock) ->
+                let y = ApiNetworkClock
+                        { ntpStatus = view #ntpStatus x
+                        } in
+                x === y .&&. show x === show y
+        it "ApiNetworkParameters" $ property $
+            \(x :: ApiNetworkParameters) ->
+                let y = ApiNetworkParameters
+                        { genesisBlockHash = view #genesisBlockHash x
+                        , blockchainStartTime = view #blockchainStartTime x
+                        , slotLength = view #slotLength x
+                        , epochLength = view #epochLength x
+                        , epochStability = view #epochStability x
+                        , activeSlotCoefficient = view #activeSlotCoefficient x
+                        } in
+                x === y .&&. show x === show y
 
 -- Golden tests files are generated automatically on first run. On later runs
 -- we check that the format stays the same. The golden files should be tracked
