@@ -311,58 +311,58 @@ spec = do
     describe
         "can perform roundtrip JSON serialization & deserialization, \
         \and match existing golden files" $ do
-            jsonRoundtripAndGolden $ Proxy @(ApiAddress ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @ApiEpochInfo
-            jsonRoundtripAndGolden $ Proxy @(ApiSelectCoinsData ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @(ApiCoinSelection ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @(ApiCoinSelectionInput ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @ApiTimeReference
-            jsonRoundtripAndGolden $ Proxy @ApiNetworkTip
-            jsonRoundtripAndGolden $ Proxy @ApiBlockReference
-            jsonRoundtripAndGolden $ Proxy @ApiNetworkInformation
-            jsonRoundtripAndGolden $ Proxy @ApiNetworkParameters
-            jsonRoundtripAndGolden $ Proxy @ApiNetworkClock
-            jsonRoundtripAndGolden $ Proxy @ApiWalletDelegation
-            jsonRoundtripAndGolden $ Proxy @ApiWalletDelegationStatus
-            jsonRoundtripAndGolden $ Proxy @ApiWalletDelegationNext
-            jsonRoundtripAndGolden $ Proxy @(ApiT (Hash "Genesis"))
-            jsonRoundtripAndGolden $ Proxy @ApiStakePool
-            jsonRoundtripAndGolden $ Proxy @(AddressAmount (ApiT Address, Proxy ('Testnet 0)))
-            jsonRoundtripAndGolden $ Proxy @(ApiTransaction ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @ApiWallet
-            jsonRoundtripAndGolden $ Proxy @ApiByronWallet
-            jsonRoundtripAndGolden $ Proxy @ApiByronWalletBalance
-            jsonRoundtripAndGolden $ Proxy @ApiWalletMigrationInfo
-            jsonRoundtripAndGolden $ Proxy @(ApiWalletMigrationPostData ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @ApiWalletPassphrase
-            jsonRoundtripAndGolden $ Proxy @ApiUtxoStatistics
-            jsonRoundtripAndGolden $ Proxy @ApiFee
-            jsonRoundtripAndGolden $ Proxy @ApiStakePoolMetrics
-            jsonRoundtripAndGolden $ Proxy @ApiTxId
-            jsonRoundtripAndGolden $ Proxy @(PostTransactionData ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @(PostTransactionFeeData ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @WalletPostData
-            jsonRoundtripAndGolden $ Proxy @AccountPostData
-            jsonRoundtripAndGolden $ Proxy @WalletOrAccountPostData
-            jsonRoundtripAndGolden $ Proxy @SomeByronWalletPostData
-            jsonRoundtripAndGolden $ Proxy @ByronWalletFromXPrvPostData
-            jsonRoundtripAndGolden $ Proxy @WalletPutData
-            jsonRoundtripAndGolden $ Proxy @WalletPutPassphraseData
-            jsonRoundtripAndGolden $ Proxy @ByronWalletPutPassphraseData
-            jsonRoundtripAndGolden $ Proxy @(ApiT (Hash "Tx"))
-            jsonRoundtripAndGolden $ Proxy @(ApiT (Passphrase "raw"))
-            jsonRoundtripAndGolden $ Proxy @(ApiT (Passphrase "lenient"))
-            jsonRoundtripAndGolden $ Proxy @(ApiT Address, Proxy ('Testnet 0))
-            jsonRoundtripAndGolden $ Proxy @(ApiT AddressPoolGap)
-            jsonRoundtripAndGolden $ Proxy @(ApiT Direction)
-            jsonRoundtripAndGolden $ Proxy @(ApiT TxStatus)
-            jsonRoundtripAndGolden $ Proxy @(ApiT WalletBalance)
-            jsonRoundtripAndGolden $ Proxy @(ApiT WalletId)
-            jsonRoundtripAndGolden $ Proxy @(ApiT WalletName)
-            jsonRoundtripAndGolden $ Proxy @ApiWalletPassphraseInfo
-            jsonRoundtripAndGolden $ Proxy @(ApiT SyncProgress)
-            jsonRoundtripAndGolden $ Proxy @(ApiT StakePoolMetadata)
-            jsonRoundtripAndGolden $ Proxy @ApiPostRandomAddressData
+            jsonRoundtrip @(ApiAddress ('Testnet 0))
+            jsonRoundtrip @ApiEpochInfo
+            jsonRoundtrip @(ApiSelectCoinsData ('Testnet 0))
+            jsonRoundtrip @(ApiCoinSelection ('Testnet 0))
+            jsonRoundtrip @(ApiCoinSelectionInput ('Testnet 0))
+            jsonRoundtrip @ApiTimeReference
+            jsonRoundtrip @ApiNetworkTip
+            jsonRoundtrip @ApiBlockReference
+            jsonRoundtrip @ApiNetworkInformation
+            jsonRoundtrip @ApiNetworkParameters
+            jsonRoundtrip @ApiNetworkClock
+            jsonRoundtrip @ApiWalletDelegation
+            jsonRoundtrip @ApiWalletDelegationStatus
+            jsonRoundtrip @ApiWalletDelegationNext
+            jsonRoundtrip @(ApiT (Hash "Genesis"))
+            jsonRoundtrip @ApiStakePool
+            jsonRoundtrip @(AddressAmount (ApiT Address, Proxy ('Testnet 0)))
+            jsonRoundtrip @(ApiTransaction ('Testnet 0))
+            jsonRoundtrip @ApiWallet
+            jsonRoundtrip @ApiByronWallet
+            jsonRoundtrip @ApiByronWalletBalance
+            jsonRoundtrip @ApiWalletMigrationInfo
+            jsonRoundtrip @(ApiWalletMigrationPostData ('Testnet 0))
+            jsonRoundtrip @ApiWalletPassphrase
+            jsonRoundtrip @ApiUtxoStatistics
+            jsonRoundtrip @ApiFee
+            jsonRoundtrip @ApiStakePoolMetrics
+            jsonRoundtrip @ApiTxId
+            jsonRoundtrip @(PostTransactionData ('Testnet 0))
+            jsonRoundtrip @(PostTransactionFeeData ('Testnet 0))
+            jsonRoundtrip @WalletPostData
+            jsonRoundtrip @AccountPostData
+            jsonRoundtrip @WalletOrAccountPostData
+            jsonRoundtrip @SomeByronWalletPostData
+            jsonRoundtrip @ByronWalletFromXPrvPostData
+            jsonRoundtrip @WalletPutData
+            jsonRoundtrip @WalletPutPassphraseData
+            jsonRoundtrip @ByronWalletPutPassphraseData
+            jsonRoundtrip @(ApiT (Hash "Tx"))
+            jsonRoundtrip @(ApiT (Passphrase "raw"))
+            jsonRoundtrip @(ApiT (Passphrase "lenient"))
+            jsonRoundtrip @(ApiT Address, Proxy ('Testnet 0))
+            jsonRoundtrip @(ApiT AddressPoolGap)
+            jsonRoundtrip @(ApiT Direction)
+            jsonRoundtrip @(ApiT TxStatus)
+            jsonRoundtrip @(ApiT WalletBalance)
+            jsonRoundtrip @(ApiT WalletId)
+            jsonRoundtrip @(ApiT WalletName)
+            jsonRoundtrip @ApiWalletPassphraseInfo
+            jsonRoundtrip @(ApiT SyncProgress)
+            jsonRoundtrip @(ApiT StakePoolMetadata)
+            jsonRoundtrip @ApiPostRandomAddressData
 
     describe "Textual encoding" $ do
         describe "Can perform roundtrip textual encoding & decoding" $ do
@@ -948,15 +948,16 @@ spec = do
 -- new format. Faulty golden files should /not/ be commited.
 --
 -- The directory `test/data/Cardano/Wallet/Api` is used.
-jsonRoundtripAndGolden
+jsonRoundtrip
     :: forall a. (Arbitrary a, ToJSON a, FromJSON a, Typeable a)
-    => Proxy a
-    -> Spec
-jsonRoundtripAndGolden proxy = do
+    => Spec
+jsonRoundtrip = do
     roundtripSpecs proxy
     typeNameInfo <- runIO mkCompatibleTypeNameInfo
     goldenSpecsWithNotePlain settings typeNameInfo Nothing
   where
+    proxy = Proxy @a
+
     -- NOTE
     -- We use a custom 'TypeNameInfo' instead of the default one provided by
     -- @hspec-golden-aeson@ because the defaults generates names that are
