@@ -381,12 +381,12 @@ spec = do
 
     describe
         "can perform roundtrip HttpApiData serialization & deserialization" $ do
-            httpApiDataRoundtrip $ Proxy @(ApiT WalletId)
-            httpApiDataRoundtrip $ Proxy @(ApiT AddressState)
-            httpApiDataRoundtrip $ Proxy @Iso8601Time
-            httpApiDataRoundtrip $ Proxy @(ApiT SortOrder)
-            httpApiDataRoundtrip $ Proxy @(ApiT Address, Proxy 'Mainnet)
-            httpApiDataRoundtrip $ Proxy @(ApiT Address, Proxy ('Testnet 0))
+            httpApiDataRoundtrip @(ApiT WalletId)
+            httpApiDataRoundtrip @(ApiT AddressState)
+            httpApiDataRoundtrip @Iso8601Time
+            httpApiDataRoundtrip @(ApiT SortOrder)
+            httpApiDataRoundtrip @(ApiT Address, Proxy 'Mainnet)
+            httpApiDataRoundtrip @(ApiT Address, Proxy ('Testnet 0))
 
     describe
         "verify that every type used with JSON content type in a servant API \
@@ -993,14 +993,14 @@ httpApiDataRoundtrip
         , Eq a
         , Show a
         )
-    => Proxy a
-    -> Spec
-httpApiDataRoundtrip proxy =
+    => Spec
+httpApiDataRoundtrip =
     it ("URL encoding of " <> cons (typeRep proxy)) $ property $ \(x :: a) -> do
         let bytes = toUrlPiece x
         let x' = parseUrlPiece bytes
         x' `shouldBe` Right x
   where
+    proxy = Proxy @a
     cons rep =
         let
             (c, args) = splitTyConApp rep
