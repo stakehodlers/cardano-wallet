@@ -20,6 +20,7 @@ import Cardano.Mnemonic
     , Mnemonic
     , SomeMnemonic (..)
     , entropyToMnemonic
+    , mkMnemonic
     )
 import Cardano.Wallet.Primitive.AddressDerivation
     ( Depth (..)
@@ -30,12 +31,14 @@ import Cardano.Wallet.Primitive.AddressDerivation
     , publicKey
     )
 import Cardano.Wallet.Primitive.AddressDerivation.Shelley
+import Cardano.Wallet.Primitive.AddressDiscovery
+import Cardano.Wallet.Primitive.AddressDiscovery.Sequential
 import Cardano.Wallet.Primitive.Types
     ( Address (..), EpochLength (..), Hash (..), SlotId (..), fromFlatSlot )
 import Cardano.Wallet.Shelley.Compatibility
     ( ShelleyBlock, TPraosStandardCrypto, fromTip, toPoint, toShelleyHash )
 import Cardano.Wallet.Unsafe
-    ( unsafeMkEntropy )
+    ( unsafeFromHex, unsafeMkEntropy )
 import Data.Proxy
     ( Proxy (..) )
 import GHC.TypeLits
@@ -45,7 +48,7 @@ import Ouroboros.Consensus.Shelley.Protocol.Crypto
 import Ouroboros.Network.Block
     ( BlockNo (..), SlotNo (..), Tip (..), getTipPoint )
 import Test.Hspec
-    ( Spec, describe, it )
+    ( Spec, describe, it, shouldBe )
 import Test.QuickCheck
     ( Arbitrary (..)
     , Gen
@@ -75,6 +78,22 @@ spec = do
             case SL.deserialiseAddr @TPraosStandardCrypto addr of
                 Just _ -> property True
                 Nothing -> property False
+        it "can deserialise golden faucet addresses" $ do
+            let addr = unsafeFromHex "6194986d1fc893629945058bdb0851478fadc57711600cb1430799c95b52b2a3b7"
+            case SL.deserialiseAddr @TPraosStandardCrypto addr of
+                Just _ -> property True
+                Nothing -> property False
+
+        it "is ours" $ do
+            let pwd = mempty
+            let Right mw = SomeMnemonic <$> mkMnemonic @15 ["day", "return", "logic", "bag", "explain", "wage", "pelican", "find", "coffee", "jar", "april", "permit", "ticket", "explain", "crime"]
+            let rootK = unsafeGenerateKeyFromSeed (mw, Nothing) pwd
+            --let accK = deriveAccountPrivateKey pwd rootK minBound
+            --let  = deriveAccountPrivateKey pwd rootK minBound
+
+            let s = mkSeqStateFromRootXPrv (rootK, pwd) (toEnum 20)
+            let addr = Address $ unsafeFromHex "6194986d1fc893629945058bdb0851478fadc57711600cb1430799c95b52b2a3b7"
+            fst (isOurs addr s) `shouldBe` True
 
 instance Arbitrary (Hash "Genesis") where
     arbitrary = Hash . BS.pack <$> vector 32
