@@ -100,7 +100,7 @@ import Ouroboros.Consensus.Protocol.Abstract
 import Ouroboros.Consensus.Shelley.Ledger
     ( Crypto, GenTx, ShelleyHash (..) )
 import Ouroboros.Consensus.Shelley.Node
-    ( ShelleyGenesis (..) )
+    ( ShelleyGenesis (..), initialFundsPseudoTxIn )
 import Ouroboros.Consensus.Shelley.Protocol.Crypto
     ( TPraosStandardCrypto )
 import Ouroboros.Network.Block
@@ -380,16 +380,11 @@ fromPParams pp = W.TxParameters
 -- | Convert genesis data into blockchain params and an initial set of UTxO
 fromGenesisData
     :: ShelleyGenesis TPraosStandardCrypto
-    -> (W.GenesisBlockParameters, [W.TxOut])
+    -> (W.GenesisBlockParameters, W.Block)
 fromGenesisData g =
     ( W.GenesisBlockParameters
         { staticParameters = W.BlockchainParameters
-            { getGenesisBlockHash =
-                -- TODO: There is not yet any agreed upon definition of a
-                -- genesis hash for a shelley-only testnet.
-                --
-                -- For now we use a dummy value.
-                W.Hash . BS.pack $ replicate 32 1
+            { getGenesisBlockHash = dummyGenesisHash
             , getGenesisBlockDate =
                 W.StartTime . getSystemStart . sgStartTime $ g
             , getSlotLength =
@@ -403,13 +398,42 @@ fromGenesisData g =
             }
         , txParameters = fromPParams . sgProtocolParams $ g
         }
-    , map mkTxOut . Map.toList . sgInitialFunds $ g
+    , genesisBlockFromTxOuts $ Map.toList $ sgInitialFunds $ g
     )
   where
-    mkTxOut (addr, coin) = W.TxOut
-        (fromShelleyAddress addr)
-        (W.Coin $ fromIntegral coin)
+
+    -- TODO: There is not yet any agreed upon definition of a
+    -- genesis hash for a shelley-only testnet.
+    --
+    -- For now we use a dummy value.
+    dummyGenesisHash = W.Hash . BS.pack $ replicate 32 1
+
+
+    -- | Construct a ("fake") genesis block from genesis transaction outputs.
+    --
+    -- The genesis data on haskell nodes is not a block at all, unlike the block0 on
+    -- jormungandr. This function is a method to deal with the discrepancy.
+    genesisBlockFromTxOuts :: [(SL.Addr TPraosStandardCrypto, SL.Coin)] -> W.Block
+    genesisBlockFromTxOuts outs = W.Block
+        { delegations  = []
+        , header = W.BlockHeader
+            { slotId =
+                W.SlotId 0 0
+            , blockHeight =
+                Quantity 0
+            , headerHash =
+                dummyGenesisHash
+            , parentHeaderHash =
+                W.Hash (BS.replicate 32 0)
+            }
+        , transactions = mkTx <$> outs
+        }
       where
+        mkTx (addr, c) =
+            W.Tx pseudoHash [] [W.TxOut (fromShelleyAddress addr) (fromShelleyCoin c)]
+          where
+            W.TxIn pseudoHash _ = fromShelleyTxIn $ initialFundsPseudoTxIn @TPraosStandardCrypto addr
+
 
 fromNetworkMagic :: NetworkMagic -> W.ProtocolMagic
 fromNetworkMagic (NetworkMagic magic) =
