@@ -415,8 +415,9 @@ fromGenesisData g =
     )
   where
     mkTxOut (addr, coin) = W.TxOut
-        (W.Address $ serialize' addr)
+        (fromShelleyAddress addr)
         (W.Coin $ fromIntegral coin)
+      where
 
 fromNetworkMagic :: NetworkMagic -> W.ProtocolMagic
 fromNetworkMagic (NetworkMagic magic) =
@@ -448,7 +449,8 @@ fromShelleyTxOut (SL.TxOut addr amount) =
   W.TxOut (fromShelleyAddress addr) (fromShelleyCoin amount)
 
 fromShelleyAddress :: Crypto crypto => SL.Addr crypto -> W.Address
-fromShelleyAddress = W.Address . serialize'
+fromShelleyAddress = W.Address
+    . SL.serialiseAddr
 
 fromShelleyCoin :: SL.Coin -> W.Coin
 fromShelleyCoin (SL.Coin c) = W.Coin $ unsafeCast c
