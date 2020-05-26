@@ -32,10 +32,6 @@ import Cardano.Wallet.Network.Ports
     ( unsafePortNumber )
 import Cardano.Wallet.Primitive.AddressDerivation
     ( NetworkDiscriminant (..) )
-import Cardano.Wallet.Primitive.AddressDerivation.Byron
-    ( ByronKey )
-import Cardano.Wallet.Primitive.AddressDerivation.Icarus
-    ( IcarusKey )
 import Cardano.Wallet.Primitive.Types
     ( Address (..)
     , FeePolicy (..)
@@ -59,7 +55,7 @@ import Cardano.Wallet.Shelley.Faucet
 import Cardano.Wallet.Shelley.Launch
     ( withCardanoNode )
 import Cardano.Wallet.Shelley.Transaction.Size
-    ( maxSizeOf, minSizeOf, sizeOfSignedTx )
+    ( sizeOfSignedTx )
 import Control.Concurrent.Async
     ( race )
 import Control.Concurrent.MVar
@@ -107,6 +103,9 @@ import qualified Data.Aeson as Aeson
 import qualified Data.ByteString as BS
 import qualified Data.Text as T
 import qualified Test.Integration.Scenario.API.Network as Network
+import qualified Test.Integration.Scenario.API.Shelley.Addresses as Addresses
+import qualified Test.Integration.Scenario.API.Shelley.Transactions as Transactions
+import qualified Test.Integration.Scenario.API.Shelley.Wallets as Wallets
 import qualified Test.Integration.Scenario.CLI.Keys as KeyCLI
 import qualified Test.Integration.Scenario.CLI.Miscellaneous as MiscellaneousCLI
 import qualified Test.Integration.Scenario.CLI.Mnemonics as MnemonicsCLI
@@ -117,7 +116,7 @@ import qualified Test.Integration.Scenario.CLI.Port as PortCLI
 instance KnownCommand Shelley where
     commandName = "cardano-wallet-shelley"
 
-main :: forall t . t ~ Shelley => IO ()
+main :: forall t n . (t ~ Shelley, n ~ 'Testnet 1) => IO ()
 main = withUtf8Encoding $ withLogging Nothing Info $ \(_, tr) -> do
     hSetBuffering stdout LineBuffering
     hspec $ do
@@ -126,11 +125,13 @@ main = withUtf8Encoding $ withLogging Nothing Info $ \(_, tr) -> do
             describe "Miscellaneous CLI tests" $ parallel (MiscellaneousCLI.spec @t)
             describe "Key CLI tests" $ parallel (KeyCLI.spec @t)
         describe "API Specifications" $ specWithServer tr $ do
+            Addresses.spec @n
+            Transactions.spec @n
+            Wallets.spec @n
             Network.spec
         describe "CLI Specifications" $ specWithServer tr $ do
             PortCLI.spec @t
             NetworkCLI.spec @t
-
 
 specWithServer
     :: Trace IO Text
@@ -197,17 +198,12 @@ mkFeeEstimator policy = \case
               where
                 coin_ = minBound
                 addr_ = Address $ flip BS.replicate 0 $ minimum
-                    [ minSizeOf @Address @'Mainnet @IcarusKey
-                    , minSizeOf @Address @'Mainnet @ByronKey
-                    ]
+                    [ 33 ]
 
             outsMax = replicate (nOuts + nChgs) (TxOut addr_ coin_)
               where
                 coin_ = maxBound
-                addr_ = Address $ flip BS.replicate 0 $ maximum
-                    [ maxSizeOf @Address @'Mainnet @IcarusKey
-                    , maxSizeOf @Address @'Mainnet @ByronKey
-                    ]
+                addr_ = Address $ flip BS.replicate 0 40
 
         in
             ( round a + round b * fromIntegral (sizeOfSignedTx inps outsMin)

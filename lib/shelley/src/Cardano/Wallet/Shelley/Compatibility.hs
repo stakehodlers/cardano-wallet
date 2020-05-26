@@ -370,7 +370,7 @@ fromGenesisData g =
             }
         , txParameters = fromPParams . sgProtocolParams $ g
         }
-    , genesisBlockFromTxOuts $ Map.toList $ sgInitialFunds $ g
+    , genesisBlockFromTxOuts $ Map.toList $ sgInitialFunds g
     )
   where
 
@@ -471,7 +471,7 @@ toCardanoTxIn (W.TxIn tid ix) =
 
 -- TODO: Is this a good idea?
 --
--- NOTE: Only creates Shelely addresses.
+-- NOTE: Only creates Shelley addresses.
 toCardanoAddress :: W.Address -> Cardano.Address
 toCardanoAddress (W.Address bytes) =
     Cardano.AddressShelley

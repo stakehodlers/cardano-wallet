@@ -1916,6 +1916,7 @@ instance LiftHandler ErrMkTx where
 instance LiftHandler ErrSignPayment where
     handler = \case
         ErrSignPaymentMkTx e -> handler e
+        ErrSignPaymentNetwork e -> handler e
         ErrSignPaymentNoSuchWallet e -> (handler e)
             { errHTTPCode = 410
             , errReasonPhrase = errReasonPhrase err410
@@ -2063,6 +2064,7 @@ instance LiftHandler ErrSelectForDelegation where
 instance LiftHandler ErrSignDelegation where
     handler = \case
         ErrSignDelegationMkTx e -> handler e
+        ErrSignDelegationNetwork e -> handler e
         ErrSignDelegationNoSuchWallet e -> (handler e)
             { errHTTPCode = 410
             , errReasonPhrase = errReasonPhrase err410

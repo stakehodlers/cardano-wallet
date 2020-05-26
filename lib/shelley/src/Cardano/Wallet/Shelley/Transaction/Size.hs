@@ -39,7 +39,8 @@ class MinSizeOf (t :: *) (n :: NetworkDiscriminant) (k :: Depth -> * -> *) where
 
 
 sizeOfSignedTx :: [TxIn] -> [TxOut] -> Int
-sizeOfSignedTx = error "sizeOfSignedTx to be implemented"
+sizeOfSignedTx ins outs = 180 + (40 * length ins) + ( 65 * length outs)
+    -- TODO: Implement properly
 
 
 instance MaxSizeOf Address 'Mainnet IcarusKey where
