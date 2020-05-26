@@ -255,7 +255,7 @@ instance PaymentAddress 'Mainnet ShelleyKey where
             putByteString . blake2b256 $ paymentK
       where
         enterprise = 96
-        networkId = 1
+        networkId = 0
 
     liftPaymentAddress (KeyFingerprint fingerprint) =
         Address $ BL.toStrict $ runPut $ do
@@ -263,7 +263,7 @@ instance PaymentAddress 'Mainnet ShelleyKey where
             putByteString fingerprint
       where
         enterprise = 96
-        networkId = 1
+        networkId = 0
 
 instance PaymentAddress ('Testnet pm) ShelleyKey where
     paymentAddress paymentK =
@@ -272,7 +272,7 @@ instance PaymentAddress ('Testnet pm) ShelleyKey where
             putByteString . blake2b256 $ paymentK
       where
         enterprise = 96
-        networkId = 0
+        networkId = 1
 
     liftPaymentAddress (KeyFingerprint fingerprint) =
         Address $ BL.toStrict $ runPut $ do
@@ -280,7 +280,7 @@ instance PaymentAddress ('Testnet pm) ShelleyKey where
             putByteString fingerprint
       where
         enterprise = 96
-        networkId = 0
+        networkId = 1
 
 instance DelegationAddress 'Mainnet ShelleyKey where
     delegationAddress paymentK stakingK =
@@ -290,7 +290,7 @@ instance DelegationAddress 'Mainnet ShelleyKey where
             putByteString . blake2b256 $ stakingK
       where
         base = 0
-        networkId = 1
+        networkId = 0
 
     liftDelegationAddress (KeyFingerprint fingerprint) stakingK =
         Address $ BL.toStrict $ runPut $ do
@@ -299,7 +299,7 @@ instance DelegationAddress 'Mainnet ShelleyKey where
             putByteString . blake2b256 $ stakingK
       where
         base = 0
-        networkId = 1
+        networkId = 0
 
 instance DelegationAddress ('Testnet pm) ShelleyKey where
     delegationAddress paymentK stakingK =
@@ -309,7 +309,7 @@ instance DelegationAddress ('Testnet pm) ShelleyKey where
             putByteString . blake2b256 $ stakingK
       where
         base = 0
-        networkId = 0
+        networkId = 1
 
     liftDelegationAddress (KeyFingerprint fingerprint) stakingK =
         Address $ BL.toStrict $ runPut $ do
