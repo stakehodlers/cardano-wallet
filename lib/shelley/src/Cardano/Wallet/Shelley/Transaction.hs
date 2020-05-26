@@ -118,9 +118,11 @@ newTransactionLayer _proxy _protocolMagic = TransactionLayer
         -- TODO: 2. The epoch length can change in the era change between byron and
         -- shelley? It would probably be better to retrive a @SlotNo@ directly
         -- without converting from @SlotId@.
-        let epochLength = EpochLength 1215
+        let epochLength = EpochLength 21600
+        --let epochLength = EpochLength 1215
 
-        let timeToLive = (toSlotNo epochLength slot) + 2
+        let timeToLive = (toSlotNo epochLength slot) + 7200
+        --let timeToLive = (toSlotNo epochLength slot) + 2
         let Cardano.TxUnsignedShelley unsigned = Cardano.buildShelleyTransaction
                 ins'
                 outs'
