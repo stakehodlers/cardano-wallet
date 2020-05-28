@@ -340,7 +340,7 @@ fromPParams :: SL.PParams -> W.TxParameters
 fromPParams pp = W.TxParameters
     -- TODO: Why does multiplying with 1000 work?
     { getFeePolicy = W.LinearFee
-        (Quantity (naturalToDouble (SL._minfeeB pp)))
+        (Quantity (naturalToDouble ((SL._minfeeB pp)) + 200000))
         (Quantity (fromIntegral (SL._minfeeA pp)))
         (Quantity 0) -- TODO: it's not as simple as this?
     , getTxMaxSize = fromMaxTxSize $ SL._maxTxSize pp
