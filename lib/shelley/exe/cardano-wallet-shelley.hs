@@ -207,7 +207,7 @@ cmdServe = command "serve" $ info (helper <*> helper' <*> cmd) $ mempty
             withShutdownHandlerMaybe tr enableShutdownHandler $ do
                 logDebug tr $ MsgServeArgs args
 
-                (discriminant, gp, vData, block0)
+                (discriminant, gp, vData, block0, poolRegCerts)
                     <- runExceptT (parseGenesisData networkConfig) >>= \case
                             Right x -> pure x
                             Left err -> do
@@ -225,6 +225,7 @@ cmdServe = command "serve" $ info (helper <*> helper' <*> cmd) $ mempty
                     tlsConfig
                     nodeSocket
                     block0
+                    poolRegCerts
                     (gp, vData)
                     (beforeMainLoop tr)
 
@@ -301,6 +302,8 @@ tracerSeveritiesOption = Tracers
     <$> traceOpt applicationTracer (Just Info)
     <*> traceOpt apiServerTracer (Just Info)
     <*> traceOpt walletEngineTracer (Just Info)
+    <*> traceOpt stakePoolEngineTracer (Just Info)
+    <*> traceOpt stakePoolDbTracer (Just Info)
     <*> traceOpt walletDbTracer (Just Info)
     <*> traceOpt ntpClientTracer (Just Info)
     <*> traceOpt networkTracer (Just Info)

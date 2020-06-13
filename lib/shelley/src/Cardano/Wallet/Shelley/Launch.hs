@@ -47,7 +47,12 @@ import Cardano.Wallet.Network.Ports
 import Cardano.Wallet.Primitive.AddressDerivation
     ( NetworkDiscriminant (..) )
 import Cardano.Wallet.Primitive.Types
-    ( Block (..), NetworkParameters (..), PoolId (..), ProtocolMagic (..) )
+    ( Block (..)
+    , NetworkParameters (..)
+    , PoolId (..)
+    , PoolRegistrationCertificate
+    , ProtocolMagic (..)
+    )
 import Cardano.Wallet.Shelley
     ( SomeNetworkDiscriminant (..) )
 import Cardano.Wallet.Shelley.Compatibility
@@ -177,7 +182,7 @@ someTestnetDiscriminant pm@(ProtocolMagic n) =
 parseGenesisData
     :: NetworkConfiguration
     -> ExceptT String IO
-        (SomeNetworkDiscriminant, NetworkParameters, NodeVersionData, Block)
+        (SomeNetworkDiscriminant, NetworkParameters, NodeVersionData, Block, [PoolRegistrationCertificate])
 parseGenesisData = \case
     TestnetConfig genesisFile -> do
         (genesis :: ShelleyGenesis TPraosStandardCrypto)
@@ -191,6 +196,7 @@ parseGenesisData = \case
             , np
             , vData
             , block0
+            , [] -- TODO: Read certs!
             )
 
 --------------------------------------------------------------------------------

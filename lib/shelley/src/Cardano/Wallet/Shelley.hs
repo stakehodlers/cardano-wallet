@@ -96,6 +96,7 @@ import Cardano.Wallet.Primitive.Types
     , ChimericAccount
     , GenesisParameters (..)
     , NetworkParameters (..)
+    , PoolRegistrationCertificate
     , SyncTolerance
     , WalletId
     )
@@ -108,7 +109,7 @@ import Cardano.Wallet.Shelley.Compatibility
 import Cardano.Wallet.Shelley.Network
     ( NetworkLayerLog, withNetworkLayer )
 import Cardano.Wallet.Shelley.Pools
-    ( StakePoolLayer (..), newStakePoolLayer )
+    ( StakePoolLayer (..), StakePoolLog (..), monitorStakePools )
 import Cardano.Wallet.Shelley.Transaction
     ( newTransactionLayer )
 import Cardano.Wallet.Transaction
@@ -116,7 +117,7 @@ import Cardano.Wallet.Transaction
 import Control.Applicative
     ( Const (..) )
 import Control.Tracer
-    ( Tracer (..), nullTracer, traceWith )
+    ( Tracer (..), contramap, nullTracer, traceWith )
 import Data.Function
     ( (&) )
 import Data.Proxy
@@ -144,6 +145,7 @@ import System.Exit
 import System.IOManager
     ( withIOManager )
 
+import qualified Cardano.Pool.DB.Sqlite as Pool
 import qualified Cardano.Wallet.Api.Server as Server
 import qualified Cardano.Wallet.DB.Sqlite as Sqlite
 import qualified Data.Text as T
@@ -190,6 +192,7 @@ serveWallet
     -- ^ Socket for communicating with the node
     -> Block
     -- ^ The genesis block, or some starting point.
+    -> [PoolRegistrationCertificate]
     -> ( NetworkParameters
        , ( NodeToClientVersionData
          , CodecCBORTerm Text NodeToClientVersionData
@@ -211,6 +214,7 @@ serveWallet
   tlsConfig
   socketPath
   block0
+  poolRegCerts
   (np, vData)
   beforeMainLoop = do
     let ntwrk = networkDiscriminantValFromProxy proxy
@@ -220,24 +224,35 @@ serveWallet
         Left e -> handleApiServerStartupError e
         Right (_, socket) -> serveApp socket
   where
+    gp@GenesisParameters
+        { getGenesisBlockHash
+        , getEpochLength
+        } = genesisParameters np
     serveApp socket = withIOManager $ \io -> do
         withNetworkLayer networkTracer np socketPath vData $ \nl -> do
             withWalletNtpClient io ntpClientTracer $ \ntpClient -> do
                 let pm = fromNetworkMagic $ networkMagic $ fst vData
-                let el = getEpochLength $ genesisParameters np
+                let el = getEpochLength
                 randomApi <- apiLayer (newTransactionLayer proxy pm el) nl
                 icarusApi  <- apiLayer (newTransactionLayer proxy pm el ) nl
                 shelleyApi <- apiLayer (newTransactionLayer proxy pm el) nl
-                let spl = newStakePoolLayer (genesisParameters np) nl
-                startServer
-                    proxy
-                    socket
-                    randomApi
-                    icarusApi
-                    shelleyApi
-                    spl
-                    ntpClient
-                pure ExitSuccess
+                let poolDBPath = Pool.defaultFilePath <$> databaseDir
+                Pool.withDBLayer stakePoolDbTracer poolDBPath $ \db -> do
+                    spl <- monitorStakePools
+                        (contramap (MsgFromWorker mempty) stakePoolEngineTracer)
+                        (genesisParameters np)
+                        poolRegCerts
+                        nl
+                        db
+                    startServer
+                        proxy
+                        socket
+                        randomApi
+                        icarusApi
+                        shelleyApi
+                        spl
+                        ntpClient
+                    pure ExitSuccess
 
     networkDiscriminantValFromProxy
         :: forall n. (NetworkDiscriminantVal n)
@@ -289,10 +304,6 @@ serveWallet
             databaseDir
         Server.newApiLayer walletEngineTracer params nl' tl db
       where
-        gp@GenesisParameters
-            { getGenesisBlockHash
-            , getEpochLength
-            } = genesisParameters np
         nl' = fromShelleyBlock getGenesisBlockHash getEpochLength <$> nl
 
     -- FIXME: reduce duplication (see Cardano.Wallet.Jormungandr)
@@ -364,6 +375,8 @@ data Tracers' f = Tracers
     , apiServerTracer    :: f ApiLog
     , walletEngineTracer :: f (WorkerLog WalletId WalletLog)
     , walletDbTracer     :: f DBLog
+    , stakePoolEngineTracer :: f (WorkerLog Text StakePoolLog)
+    , stakePoolDbTracer  :: f DBLog
     , ntpClientTracer    :: f NtpTrace
     , networkTracer      :: f NetworkLayerLog
     }
@@ -387,6 +400,8 @@ tracerSeverities sev = Tracers
     , walletDbTracer     = Const sev
     , walletEngineTracer = Const sev
     , ntpClientTracer    = Const sev
+    , stakePoolEngineTracer = Const sev
+    , stakePoolDbTracer  = Const sev
     , networkTracer      = Const sev
     }
 
@@ -401,6 +416,8 @@ setupTracers sev tr = Tracers
     , walletEngineTracer = mkTrace walletEngineTracer $ onoff walletEngineTracer tr
     , walletDbTracer     = mkTrace walletDbTracer     $ onoff walletDbTracer tr
     , ntpClientTracer    = mkTrace ntpClientTracer    $ onoff ntpClientTracer tr
+    , stakePoolEngineTracer = mkTrace stakePoolEngineTracer $ onoff stakePoolEngineTracer tr
+    , stakePoolDbTracer  = mkTrace stakePoolDbTracer     $ onoff stakePoolDbTracer tr
     , networkTracer      = mkTrace networkTracer      $ onoff networkTracer tr
     }
   where
@@ -424,12 +441,14 @@ setupTracers sev tr = Tracers
 -- | Strings that the user can refer to tracers by.
 tracerLabels :: Tracers' (Const Text)
 tracerLabels = Tracers
-    { applicationTracer  = Const "application"
-    , apiServerTracer    = Const "api-server"
-    , walletEngineTracer = Const "wallet-engine"
-    , walletDbTracer     = Const "wallet-db"
-    , ntpClientTracer    = Const "ntp-client"
-    , networkTracer      = Const "network"
+    { applicationTracer     = Const "application"
+    , apiServerTracer       = Const "api-server"
+    , walletEngineTracer    = Const "wallet-engine"
+    , stakePoolEngineTracer = Const "pools-engine"
+    , stakePoolDbTracer     = Const "pools-db"
+    , walletDbTracer        = Const "wallet-db"
+    , ntpClientTracer       = Const "ntp-client"
+    , networkTracer         = Const "network"
     }
 
 -- | Names and descriptions of the tracers, for user documentation.
@@ -446,6 +465,12 @@ tracerDescriptions =
       )
     , ( lbl walletDbTracer
       , "About database operations of each wallet."
+      )
+    , ( lbl stakePoolEngineTracer
+      , "About the background worker monitoring stake pools and stake pools engine."
+      )
+    , ( lbl stakePoolDbTracer
+      , "About database operations on stake pools."
       )
     , ( lbl ntpClientTracer
       , "About ntp-client."
@@ -464,6 +489,8 @@ nullTracers = Tracers
     , apiServerTracer    = nullTracer
     , walletEngineTracer = nullTracer
     , walletDbTracer     = nullTracer
+    , stakePoolEngineTracer = nullTracer
+    , stakePoolDbTracer  = nullTracer
     , ntpClientTracer    = nullTracer
     , networkTracer      = nullTracer
     }

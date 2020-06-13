@@ -209,6 +209,7 @@ specWithServer tr = aroundAll withContext . after tearDown
                     Nothing
                     socketPath
                     block0
+                    []
                     (gp, vData)
                     (action gp)
 
