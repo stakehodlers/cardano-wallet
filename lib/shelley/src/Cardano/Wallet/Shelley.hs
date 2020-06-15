@@ -109,7 +109,7 @@ import Cardano.Wallet.Shelley.Compatibility
 import Cardano.Wallet.Shelley.Network
     ( NetworkLayerLog, withNetworkLayer )
 import Cardano.Wallet.Shelley.Pools
-    ( StakePoolLayer (..), StakePoolLog (..), monitorStakePools )
+    ( StakePoolLayer (..), StakePoolLog (..), newMonitoringStakePoolLayer )
 import Cardano.Wallet.Shelley.Transaction
     ( newTransactionLayer )
 import Cardano.Wallet.Transaction
@@ -238,7 +238,7 @@ serveWallet
                 shelleyApi <- apiLayer (newTransactionLayer proxy pm el) nl
                 let poolDBPath = Pool.defaultFilePath <$> databaseDir
                 Pool.withDBLayer stakePoolDbTracer poolDBPath $ \db -> do
-                    spl <- monitorStakePools
+                    spl <- newMonitoringStakePoolLayer
                         (contramap (MsgFromWorker mempty) stakePoolEngineTracer)
                         (genesisParameters np)
                         poolRegCerts

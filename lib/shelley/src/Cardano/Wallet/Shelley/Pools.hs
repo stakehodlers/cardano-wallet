@@ -13,9 +13,23 @@
 -- Copyright: © 2020 IOHK
 -- License: Apache-2.0
 --
--- Haskell-node "shelley" implementation of the @StakePoolLayer@ abstraction,
--- i.e. some boring glue.
-module Cardano.Wallet.Shelley.Pools where
+-- This module uses LSQ and chain following to collect a consistent view of
+-- stake pool data, as provided through @StakePoolLayer@.
+module Cardano.Wallet.Shelley.Pools
+    (
+    -- * StakePoolLayer
+      StakePoolLayer (..)
+    , newMonitoringStakePoolLayer
+    , newStakePoolLayer
+    , monitorStakePools
+
+    -- * Errors
+    , ErrFetchMetrics (..)
+
+    -- * Logs
+    , StakePoolLog (..)
+    )
+    where
 
 import Prelude
 
@@ -113,7 +127,15 @@ import qualified Shelley.Spec.Ledger.BlockChain as SL
 import qualified Shelley.Spec.Ledger.Tx as SL
 import qualified Shelley.Spec.Ledger.TxData as SL
 
-monitorStakePools
+data ErrFetchMetrics = ErrFetchMetrics
+  deriving Show
+
+data StakePoolLayer = StakePoolLayer
+    { knownPools :: IO [PoolId]
+    , listStakePools :: Coin -> ExceptT ErrFetchMetrics IO [Api.ApiStakePool]
+    }
+
+newMonitoringStakePoolLayer
     :: Tracer IO StakePoolLog
     -> GenesisParameters
     -> [PoolRegistrationCertificate]
@@ -121,11 +143,113 @@ monitorStakePools
     -> NetworkLayer IO (IO Shelley) ShelleyBlock
     -> DBLayer IO
     -> IO (StakePoolLayer)
-monitorStakePools tr gp _genesisPoolRegCerts nl db@DBLayer{..} = do
-    liftIO $ putStrLn "### monitorStakePools"
-    Cursor _workerTip csQ _ <- liftIO $ initCursor nl []
-    _ <- forkIO $ go csQ
+newMonitoringStakePoolLayer tr gp genesisPoolRegCerts nl db@DBLayer{..} = do
+    _ <- forkIO $ monitorStakePools tr gp genesisPoolRegCerts nl db
     return $ newStakePoolLayer gp nl db
+
+newStakePoolLayer
+    :: GenesisParameters
+    -> NetworkLayer IO (IO Shelley) b
+    -> DBLayer IO
+    -> StakePoolLayer
+newStakePoolLayer gp nl DBLayer{..} = StakePoolLayer
+    { knownPools = _knownPools
+    , listStakePools = _listPools
+    }
+  where
+    dummyCoin = Coin 0
+
+    -- Note: We shouldn't have to do this conversion.
+    el = getEpochLength gp
+    gh = getGenesisBlockHash gp
+    getTip = fmap (toPoint gh el) . liftIO $ unsafeRunExceptT $ currentNodeTip nl
+
+    _knownPools
+        :: IO [PoolId]
+    _knownPools = do
+        Cursor _workerTip _ lsqQ <- initCursor nl []
+        pt <- getTip
+        res <- runExceptT $ map fst . Map.toList
+            <$> fetchLsqPoolMetrics lsqQ pt dummyCoin
+        case res of
+            Right x -> return x
+            Left _e -> return []
+
+
+
+    _listPools
+        :: Coin
+        -- ^ The amount of stake the user intends to delegate, which may affect the
+        -- ranking of the pools.
+        -> ExceptT ErrFetchMetrics IO [Api.ApiStakePool]
+    _listPools s = do
+            Cursor _workerTip _ lsqQ <- liftIO $ initCursor nl []
+            pt <- liftIO getTip
+            lsqData <- fetchLsqPoolMetrics lsqQ pt s
+            dbData <- liftIO readDBCerts
+            return $
+                sortOn (Down . (view (#metrics . #nonMyopicMemberRewards)))
+                . map snd
+                . Map.toList
+                $ combineLsqAndDb lsqData dbData
+      where
+        combineLsqAndDb
+            :: Map PoolId PoolLsqMetrics
+            -> Map PoolId PoolRegistrationCertificate
+            -> Map PoolId Api.ApiStakePool
+        combineLsqAndDb =
+            Map.merge dropMissing dropMissing bothPresent
+          where
+            bothPresent = zipWithMatched  $ \k m r -> mkApiPool k m r
+
+            mkApiPool pid (PoolLsqMetrics prew pstk psat) reg = Api.ApiStakePool
+                { Api.id = (ApiT pid)
+                , Api.metrics = Api.ApiStakePoolMetrics
+                    { Api.nonMyopicMemberRewards = (mapQ fromIntegral prew)
+                    , Api.relativeStake = Quantity pstk
+                    , Api.saturation = psat
+                    , Api.producedBlocks = Quantity 0 -- TODO: Implement
+                    }
+                , Api.metadata = Nothing -- TODO: Implement
+                , Api.cost = mapQ fromIntegral $ poolCost reg
+                , Api.margin = Quantity $ poolMargin reg
+                }
+
+            mapQ f (Quantity x) = Quantity $ f x
+
+
+
+--
+-- Pool Chain Following
+--
+
+data PoolChainData = PoolChainData
+    { poolOwners :: ![PoolOwner]
+    , poolMargin :: Percentage
+    , poolCost :: Quantity "lovelace" Word64
+    }
+
+-- Read the latest map of pool registration certificates
+--
+-- TODO: How will we handle retirements? We can use LSQ as source of truth for
+-- whether the pool exists or not. We should
+readDBCerts :: DBLayer IO -> IO (Map PoolId PoolChainData)
+readDBCerts = atomically $ do
+    pools <- listRegisteredPools
+    x <- mapM (\p -> ((fmap (p,)) <$> readPoolRegistration p) ) pools
+    return $ Map.fromList $ catMaybes x
+
+monitorStakePools
+    :: Tracer IO StakePoolLog
+    -> GenesisParameters
+    -> [PoolRegistrationCertificate]
+       -- ^ Genesis certs
+    -> NetworkLayer IO (IO Shelley) ShelleyBlock
+    -> DBLayer IO
+    -> IO ()
+monitorStakePools tr gp _genesisPoolRegCerts nl DBLayer{..} = do
+    Cursor _workerTip csQ _ <- liftIO $ initCursor nl []
+    go csQ
   where
     go csQ = do
         res <- csQ `send` CmdNextBlocks
@@ -163,7 +287,8 @@ monitorStakePools tr gp _genesisPoolRegCerts nl db@DBLayer{..} = do
                         SL.RetirePool _ _ -> return () -- TODO
 
     rollback :: Point ShelleyBlock -> IO ()
-    rollback _to = return () -- TODO: atomically $ rollbackTo (fromSlotNo el $ f to)
+    rollback _to = return ()
+    -- TODO: atomically $ rollbackTo (fromSlotNo el $ f to)
 
     txs :: OC.ShelleyBlock TPraosStandardCrypto -> [SL.Tx TPraosStandardCrypto]
     txs (OC.ShelleyBlock (SL.Block _ (SL.TxSeq ts)) _) = toList ts
@@ -177,6 +302,10 @@ monitorStakePools tr gp _genesisPoolRegCerts nl db@DBLayer{..} = do
         SL.DCertGenesis{}         -> Nothing
         SL.DCertMir{}             -> Nothing
 
+--
+-- Pool LSQ Metrics
+--
+
 -- | Stake Pool Data fields fetched from the node via LSQ
 data PoolLsqMetrics = PoolLsqMetrics
     { nonMyopicMemberRewards :: Quantity "lovelace" Word64
@@ -184,9 +313,6 @@ data PoolLsqMetrics = PoolLsqMetrics
     , saturation :: Double
     } deriving (Eq, Show, Generic)
 
-
-data ErrFetchMetrics = ErrFetchMetrics
-  deriving Show
 
 -- | Fetches information about pools availible over LSQ from the node, at the
 -- nodes' tip.
@@ -240,8 +366,6 @@ fetchLsqPoolMetrics queue pt coin = do
 
         bothPresent       = zipWithMatched  $ \_k s r -> PoolLsqMetrics r s (sat s)
 
-readBlockProductions :: IO (Map PoolId Int)
-readBlockProductions = return Map.empty
 
 --
 -- Api Server Handler
@@ -254,86 +378,6 @@ instance LiftHandler ErrFetchMetrics where
                 [ "There was a problem fetching metrics from the node."
                 ]
 
-data StakePoolLayer = StakePoolLayer
-    { knownPools :: IO [PoolId]
-    , listStakePools :: Coin -> ExceptT ErrFetchMetrics IO [Api.ApiStakePool]
-    }
-
-
-newStakePoolLayer
-    :: GenesisParameters
-    -> NetworkLayer IO (IO Shelley) b
-    -> DBLayer IO
-    -> StakePoolLayer
-newStakePoolLayer gp nl DBLayer{..} = StakePoolLayer
-    { knownPools = _knownPools
-    , listStakePools = _listPools
-    }
-  where
-    dummyCoin = Coin 0
-
-    -- Note: We shouldn't have to do this conversion.
-    el = getEpochLength gp
-    gh = getGenesisBlockHash gp
-    getTip = fmap (toPoint gh el) . liftIO $ unsafeRunExceptT $ currentNodeTip nl
-
-    _knownPools
-        :: IO [PoolId]
-    _knownPools = do
-        Cursor _workerTip _ lsqQ <- initCursor nl []
-        pt <- getTip
-        res <- runExceptT $ map fst . Map.toList
-            <$> fetchLsqPoolMetrics lsqQ pt dummyCoin
-        case res of
-            Right x -> return x
-            Left _e -> return []
-
-
-    readDBCerts :: IO (Map PoolId PoolRegistrationCertificate)
-    readDBCerts = atomically $ do
-        pools <- listRegisteredPools
-        x <- mapM (\p -> ((fmap (p,)) <$> readPoolRegistration p) ) pools
-        return $ Map.fromList $ catMaybes x
-
-    _listPools
-        :: Coin
-        -- ^ The amount of stake the user intends to delegate, which may affect the
-        -- ranking of the pools.
-        -> ExceptT ErrFetchMetrics IO [Api.ApiStakePool]
-    _listPools s = do
-            Cursor _workerTip _ lsqQ <- liftIO $ initCursor nl []
-            pt <- liftIO getTip
-            lsqData <- fetchLsqPoolMetrics lsqQ pt s
-            dbData <- liftIO readDBCerts
-            return $
-                sortOn (Down . (view (#metrics . #nonMyopicMemberRewards)))
-                . map snd
-                . Map.toList
-                $ combineLsqAndDb lsqData dbData
-      where
-        combineLsqAndDb
-            :: Map PoolId PoolLsqMetrics
-            -> Map PoolId PoolRegistrationCertificate
-            -> Map PoolId Api.ApiStakePool
-        combineLsqAndDb =
-            Map.merge dropMissing dropMissing bothPresent
-          where
-            bothPresent = zipWithMatched  $ \k m r -> mkApiPool k m r
-
-            mkApiPool pid (PoolLsqMetrics prew pstk psat) reg = Api.ApiStakePool
-                { Api.id = (ApiT pid)
-                , Api.metrics = Api.ApiStakePoolMetrics
-                    { Api.nonMyopicMemberRewards = (mapQ fromIntegral prew)
-                    , Api.relativeStake = Quantity pstk
-                    , Api.saturation = psat
-                    , Api.producedBlocks = Quantity 0 -- TODO: Implement
-                    }
-                , Api.metadata = Nothing -- TODO: Implement
-                , Api.cost = mapQ fromIntegral $ poolCost reg
-                , Api.margin = Quantity $ poolMargin reg
-                }
-
-            mapQ f (Quantity x) = Quantity $ f x
 
 {-------------------------------------------------------------------------------
                                     Logging
