@@ -77,6 +77,7 @@
         cardano-binary-test = ./cardano-binary-test.nix;
         cardano-crypto-class = ./cardano-crypto-class.nix;
         cardano-slotting = ./cardano-slotting.nix;
+        cardano-crypto-praos = ./cardano-crypto-praos.nix;
         cardano-crypto = ./cardano-crypto.nix;
         cardano-ledger = ./cardano-ledger.nix;
         cardano-crypto-wrapper = ./cardano-crypto-wrapper.nix;
