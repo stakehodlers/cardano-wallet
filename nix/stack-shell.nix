@@ -36,6 +36,6 @@ mkShell rec {
   # Build environment setup copied from
   # <nixpkgs/pkgs/development/haskell-modules/generic-stack-builder.nix>
   GIT_SSL_CAINFO = "${cacert}/etc/ssl/certs/ca-bundle.crt";
-  LD_LIBRARY_PATH = lib.makeLibraryPath (LD_LIBRARY_PATH ++ buildInputs);
+  LD_LIBRARY_PATH = lib.makeLibraryPath buildInputs;
   LANG = "en_US.UTF-8";
 }
