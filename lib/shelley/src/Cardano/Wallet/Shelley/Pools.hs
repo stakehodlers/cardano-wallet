@@ -71,7 +71,7 @@ import Cardano.Wallet.Shelley.Compatibility
 import Cardano.Wallet.Shelley.Network
     ( NodePoolLsqData (..) )
 import Cardano.Wallet.Unsafe
-    ( unsafeMkPercentage, unsafeRunExceptT )
+    ( unsafeRunExceptT )
 import Control.Concurrent
     ( threadDelay )
 import Control.Monad
@@ -252,17 +252,11 @@ combineLsqData NodePoolLsqData{nOpt, rewards, stake} =
         , saturation = (sat s)
         }
 
-    -- TODO: This case seems possible on shelley_testnet, but why, and how
-    -- should we treat it?
+    -- It seems like we can only join pools that are in the stake distribution.
     --
-    -- The pool with rewards but not stake didn't seem to be retiring.
-    rewardsButNoStake = traverseMissing $ \_k r -> pure $ PoolLsqMetrics
-        { nonMyopicMemberRewards = r
-        , relativeStake = noStake
-        , saturation = sat noStake
-        }
-      where
-        noStake = unsafeMkPercentage 0
+    -- To make sure that we can join every pool that we list, we @dropMissing@
+    -- here.
+    rewardsButNoStake = dropMissing
 
     bothPresent       = zipWithMatched  $ \_k s r -> PoolLsqMetrics r s (sat s)
 
