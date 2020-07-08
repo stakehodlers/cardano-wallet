@@ -46,10 +46,12 @@ module Cardano.Wallet.Primitive.Types
     , SealedTx (..)
     , TransactionInfo (..)
     , UnsignedTx (..)
+    , PendingTx (..)
     , txIns
     , isPending
     , inputs
     , fromTransactionInfo
+    , fromTransactionInfoPending
     , toTxHistory
 
     -- * Address
@@ -210,6 +212,8 @@ import Data.Map.Strict
     ( Map )
 import Data.Maybe
     ( isJust )
+import Data.Ord
+    ( comparing )
 import Data.Proxy
     ( Proxy (..) )
 import Data.Quantity
@@ -893,6 +897,7 @@ instance Buildable TxMeta where
 data TxStatus
     = Pending
     | InLedger
+    | Expired
     deriving (Show, Eq, Ord, Bounded, Enum, Generic)
 
 instance NFData TxStatus
@@ -905,6 +910,26 @@ instance FromText TxStatus where
 
 instance ToText TxStatus where
     toText = toTextFromBoundedEnum SnakeLowerCase
+
+
+-- | A 'Tx' which has been submitted but does not yet appear in the ledger.
+--
+data PendingTx = PendingTx
+    { pendingTx :: !Tx
+    -- ^ The transaction.
+    , expiry :: !SlotId
+    -- ^ The future slot at which the transaction will expire.
+    -- TTL is supported by the shelley ledger. For others, we can pretend.
+    }
+    deriving (Generic, Eq, Show)
+
+instance Ord PendingTx where
+    compare = comparing pendingTx
+
+instance NFData PendingTx
+
+instance Buildable PendingTx where
+    build (PendingTx tx ex) = build tx <> " (expires: " <> build ex <> ")"
 
 -- | An unsigned transaction.
 --
@@ -941,7 +966,7 @@ newtype SealedTx = SealedTx { getSealedTx :: ByteString }
     deriving stock (Show, Eq, Generic)
     deriving newtype (ByteArrayAccess)
 
--- | True if the given tuple refers to a pending transaction
+-- | True if the given metadata refers to a pending transaction
 isPending :: TxMeta -> Bool
 isPending = (== Pending) . (status :: TxMeta -> TxStatus)
 
@@ -974,6 +999,12 @@ fromTransactionInfo info = Tx
     , resolvedInputs = (\(a,b,_) -> (a,b)) <$> txInfoInputs info
     , outputs = txInfoOutputs info
     , withdrawals = txInfoWithdrawals info
+    }
+
+fromTransactionInfoPending :: TransactionInfo -> PendingTx
+fromTransactionInfoPending info = PendingTx
+    { pendingTx = fromTransactionInfo info
+    , expiry = error "fixme: fromTransactionInfoPending"
     }
 
 -- | Drop time-specific information
