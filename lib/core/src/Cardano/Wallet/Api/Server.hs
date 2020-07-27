@@ -1550,7 +1550,10 @@ getNetworkInformation (_block0, _, st) nl = do
 
     nowInfo <- liftIO $ runMaybeT $ networkTipInfo now
 
-    progress <- liftIO $ syncProgress st (unsafeRunExceptT . ti) nodeTip now
+    -- FIXME: Fix race condition instead of returning minBound!!!
+    progress <- liftIO $ runExceptT (syncProgress st ti nodeTip now) >>= \case
+        Right x -> pure x
+        Left _ -> pure NotResponding
     pure $ Api.ApiNetworkInformation
         { Api.syncProgress = ApiT progress
         , Api.nextEpoch = snd <$> nowInfo
