@@ -283,6 +283,8 @@ serveWallet
                     desiredNumberOfStakePools (protocolParameters np)
                 , defaultMinimumUTxOValue =
                     minimumUTxOvalue (protocolParameters np)
+                , defaultHardforkEpoch =
+                    hardforkEpochNo (protocolParameters np)
                 }
             )
             (unsafeRunExceptT . timeInterpreter nl)
