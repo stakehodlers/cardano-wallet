@@ -1615,7 +1615,7 @@ getNetworkParameters (_block0, np, _st) nl = do
     case epochNoM of
         Just epochNo -> do
             epochStartTime <-
-                liftIO $ timeInterpreter nl
+                liftIO $ unsafeRunExceptT $ timeInterpreter nl
                 (firstSlotInEpoch epochNo >>= startTime)
             pure $ apiNetworkParams
                 { hardforkAt = Just $
