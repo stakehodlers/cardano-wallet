@@ -1031,4 +1031,4 @@ instance HasSeverityAnnotation (NetworkLayerLog b) where
         MsgWatcherUpdate{}                 -> Debug
         MsgChainSyncCmd cmd                -> getSeverityAnnotation cmd
         MsgInterpreter{}                   -> Debug
-        MsgInterpreterPastHorizon{}        -> Critical
+        MsgInterpreterPastHorizon{}        -> Info
