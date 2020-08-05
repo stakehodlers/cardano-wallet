@@ -893,6 +893,7 @@ instance Buildable TxMeta where
 data TxStatus
     = Pending
     | InLedger
+    | Expired
     deriving (Show, Eq, Ord, Bounded, Enum, Generic)
 
 instance NFData TxStatus
@@ -941,7 +942,7 @@ newtype SealedTx = SealedTx { getSealedTx :: ByteString }
     deriving stock (Show, Eq, Generic)
     deriving newtype (ByteArrayAccess)
 
--- | True if the given tuple refers to a pending transaction
+-- | True if the given metadata refers to a pending transaction
 isPending :: TxMeta -> Bool
 isPending = (== Pending) . (status :: TxMeta -> TxStatus)
 
