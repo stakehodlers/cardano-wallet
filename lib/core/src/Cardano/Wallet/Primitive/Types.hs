@@ -1101,6 +1101,11 @@ instance FromText AddressState where
 instance ToText AddressState where
     toText = toTextFromBoundedEnum SnakeLowerCase
 
+instance Buildable AddressState where
+    build = build . toText
+
+instance NFData AddressState
+
 {-------------------------------------------------------------------------------
                                      Coin
 -------------------------------------------------------------------------------}
