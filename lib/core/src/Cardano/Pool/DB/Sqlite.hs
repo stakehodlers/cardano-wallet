@@ -373,6 +373,11 @@ newDBLayer trace fp timeInterpreter = do
 
         , removePools = removePools_
 
+        , removeRetiredPools = \epoch -> do
+            retirementCerts <- listRetiredPools_ epoch
+            removePools_ (view #poolId <$> retirementCerts)
+            pure retirementCerts
+
         , readPoolProductionCursor = \k -> do
             reverse . map (snd . fromPoolProduction . entityVal) <$> selectList
                 []
