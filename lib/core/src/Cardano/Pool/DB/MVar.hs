@@ -66,6 +66,8 @@ import Data.Tuple
 newDBLayer :: TimeInterpreter Identity -> IO (DBLayer IO)
 newDBLayer timeInterpreter = do
     db <- newMVar emptyPoolDatabase
+    let listRetiredPools_ epochNo =
+            modifyMVar db (pure . swap . mListRetiredPools epochNo)
     let readPoolRegistration_ =
             readPoolDB db . mReadPoolRegistration
     let readPoolRetirement_ =
@@ -117,8 +119,7 @@ newDBLayer timeInterpreter = do
         , listRegisteredPools =
             modifyMVar db (pure . swap . mListRegisteredPools)
 
-        , listRetiredPools = \epochNo ->
-            modifyMVar db (pure . swap . mListRetiredPools epochNo)
+        , listRetiredPools = listRetiredPools_
 
         , putPoolMetadata = \a0 a1 ->
             void $ alterPoolDB (const Nothing) db (mPutPoolMetadata a0 a1)
