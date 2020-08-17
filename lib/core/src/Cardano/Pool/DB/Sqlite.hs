@@ -357,19 +357,7 @@ newDBLayer trace fp timeInterpreter = do
                 , Desc PoolRegistrationSlotInternalIndex
                 ]
 
-        , listRetiredPools = \epochNo -> do
-            let query = T.unwords
-                    [ "SELECT * FROM "
-                    , databaseViewName activePoolRetirements
-                    , "WHERE retirement_epoch <="
-                    , T.toText epochNo
-                    , ";"
-                    ]
-            let safeCast (Single poolId, Single retirementEpoch) =
-                    PoolRetirementCertificate
-                        <$> fromPersistValue poolId
-                        <*> fromPersistValue retirementEpoch
-            rights . fmap safeCast <$> rawSql query []
+        , listRetiredPools = listRetiredPools_
 
         , rollbackTo = \point -> do
             -- TODO(ADP-356): What if the conversion blocks or fails?
@@ -421,6 +409,20 @@ newDBLayer trace fp timeInterpreter = do
         , atomically = runQuery
         })
     where
+        listRetiredPools_ epochNo = do
+            let query = T.unwords
+                    [ "SELECT * FROM "
+                    , databaseViewName activePoolRetirements
+                    , "WHERE retirement_epoch <="
+                    , T.toText epochNo
+                    , ";"
+                    ]
+            let safeCast (Single poolId, Single retirementEpoch) =
+                    PoolRetirementCertificate
+                        <$> fromPersistValue poolId
+                        <*> fromPersistValue retirementEpoch
+            rights . fmap safeCast <$> rawSql query []
+
         readPoolRegistration_ poolId = do
             result <- selectFirst
                 [ PoolRegistrationPoolId ==. poolId ]
