@@ -371,16 +371,7 @@ newDBLayer trace fp timeInterpreter = do
             deleteWhere [ PoolRetirementSlot >. point ]
             -- TODO: remove dangling metadata no longer attached to a pool
 
-        , removePools = mapM_ $ \pool -> do
-            liftIO
-                $ traceWith trace
-                $ MsgRemovingDatabaseEntity
-                $ T.unwords [ "pool", toText pool ]
-            deleteWhere [ PoolProductionPoolId ==. pool ]
-            deleteWhere [ PoolOwnerPoolId ==. pool ]
-            deleteWhere [ PoolRegistrationPoolId ==. pool ]
-            deleteWhere [ PoolRetirementPoolId ==. pool ]
-            deleteWhere [ StakeDistributionPoolId ==. pool ]
+        , removePools = removePools_
 
         , readPoolProductionCursor = \k -> do
             reverse . map (snd . fromPoolProduction . entityVal) <$> selectList
@@ -482,6 +473,17 @@ newDBLayer trace fp timeInterpreter = do
                 let cert = PoolRetirementCertificate {poolId, retiredIn}
                 let cpt = CertificatePublicationTime {slotNo, slotInternalIndex}
                 pure (cpt, cert)
+
+        removePools_ = mapM_ $ \pool -> do
+            liftIO
+                $ traceWith trace
+                $ MsgRemovingDatabaseEntity
+                $ T.unwords [ "pool", toText pool ]
+            deleteWhere [ PoolProductionPoolId ==. pool ]
+            deleteWhere [ PoolOwnerPoolId ==. pool ]
+            deleteWhere [ PoolRegistrationPoolId ==. pool ]
+            deleteWhere [ PoolRetirementPoolId ==. pool ]
+            deleteWhere [ StakeDistributionPoolId ==. pool ]
 
 migrateManually
     :: Tracer IO DBLog
