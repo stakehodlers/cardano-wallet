@@ -72,6 +72,8 @@ newDBLayer timeInterpreter = do
             readPoolDB db . mReadPoolRegistration
     let readPoolRetirement_ =
             readPoolDB db . mReadPoolRetirement
+    let removePools_ =
+            void . alterPoolDB (const Nothing) db . mRemovePools
     return $ DBLayer
 
         { putPoolProduction = \sl pool -> ExceptT $ do
@@ -130,8 +132,7 @@ newDBLayer timeInterpreter = do
         , rollbackTo =
             void . alterPoolDB (const Nothing) db . mRollbackTo timeInterpreter
 
-        , removePools =
-            void . alterPoolDB (const Nothing) db . mRemovePools
+        , removePools = removePools_
 
         , cleanDB =
             void $ alterPoolDB (const Nothing) db mCleanPoolProduction
