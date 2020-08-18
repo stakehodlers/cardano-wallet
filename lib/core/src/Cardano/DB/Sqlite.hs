@@ -367,7 +367,8 @@ data DBLog
     | MsgClosing (Maybe FilePath)
     | MsgWillOpenDB (Maybe FilePath)
     | MsgDatabaseReset
-    | MsgGarbageCollection Text
+    | MsgGarbageCollection Text BracketLog
+    | MsgGarbageCollectionStep Text
     | MsgIsAlreadyClosed Text
     | MsgStatementAlreadyFinalized Text
     | MsgWaitingForDatabase Text (Maybe Int)
@@ -381,7 +382,6 @@ data DBLog
     | MsgFoundDatabase FilePath Text
     | MsgUnknownDBFile FilePath
     deriving (Generic, Show, Eq, ToJSON)
-
 
 {-------------------------------------------------------------------------------
                                     Logging
@@ -445,7 +445,8 @@ instance HasSeverityAnnotation DBLog where
         MsgClosing _ -> Debug
         MsgWillOpenDB _ -> Info
         MsgDatabaseReset -> Notice
-        MsgGarbageCollection _ -> Notice
+        MsgGarbageCollection _ _ -> Notice
+        MsgGarbageCollectionStep _ -> Notice
         MsgIsAlreadyClosed _ -> Warning
         MsgStatementAlreadyFinalized _ -> Warning
         MsgWaitingForDatabase _ _ -> Info
@@ -475,8 +476,14 @@ instance ToText DBLog where
         MsgDatabaseReset ->
             "Non backward compatible database found. Removing old database \
             \and re-creating it from scratch. Ignore the previous error."
-        MsgGarbageCollection msg ->
-            "Database garbage collection: " <> msg
+        MsgGarbageCollection msg bkt -> mconcat
+            [ "Garbage collection: "
+            , msg
+            , ": "
+            , toText bkt
+            ]
+        MsgGarbageCollectionStep msg ->
+            "Garbage collection step: " <> msg
         MsgIsAlreadyClosed msg ->
             "Attempted to close an already closed connection: " <> msg
         MsgStatementAlreadyFinalized msg ->
