@@ -1662,7 +1662,7 @@ data PoolRetirementCertificate = PoolRetirementCertificate
     { poolId :: !PoolId
 
     -- | The first epoch when the pool becomes inactive.
-    , retiredIn :: !EpochNo
+    , retirementEpoch :: !EpochNo
     } deriving (Generic, Show, Eq, Ord)
 
 instance NFData PoolRetirementCertificate
