@@ -1671,7 +1671,7 @@ instance Buildable PoolRetirementCertificate where
     build (PoolRetirementCertificate p e) = mempty
         <> "Pool "
         <> build p
-        <> " retiring at "
+        <> " with retirement epoch "
         <> build e
 
 -- | Represents an abstract notion of a certificate publication time.
